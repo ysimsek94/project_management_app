@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_management_app/core/extensions/extensions.dart';
+import 'package:project_management_app/core/extensions/theme_extensions.dart';
 
 class AppCircularIndicator extends StatelessWidget {
   const AppCircularIndicator({super.key});

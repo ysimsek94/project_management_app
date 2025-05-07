@@ -10,19 +10,17 @@ import 'package:project_management_app/features/task/presentation/pages/task_lis
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/utils/app_styles.dart';
 import '../../../task/presentation/bloc/task_cubit.dart';
-import 'package:project_management_app/core/extensions/extensions.dart';
+import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
  // Ensure this import exists
 
 class HomePage extends StatefulWidget {
   final GetProjectsUseCase getProjectsUseCase;
-  final GetTasksByProjectIdUseCase getTasksUseCase;
   final TaskUseCases taskUseCases;
 
   const HomePage({
     super.key,
     required this.getProjectsUseCase,
-    required this.getTasksUseCase,
     required this.taskUseCases,
   });
 
@@ -44,14 +42,13 @@ class _HomePageState extends State<HomePage> {
       BlocProvider(
         create: (_) => TaskCubit(widget.taskUseCases),
         child: TaskListPage(
-          getTasksUseCase: widget.getTasksUseCase,
           taskUsecases: widget.taskUseCases,
         ),
       ),
+     // ProfilePage(), // Profil sayfası burada ekleniyor
     ];
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       body: pages[_currentIndex],
       bottomNavigationBar: AppBottomNavBar(
         currentIndex: _currentIndex,
@@ -59,6 +56,7 @@ class _HomePageState extends State<HomePage> {
         items: const [
           AppBottomNavBarItem(icon: Icons.home_outlined, label: 'Ana Sayfa'),
           AppBottomNavBarItem(icon: Icons.list_alt_outlined, label: 'Görevler'),
+          AppBottomNavBarItem(icon: Icons.person, label: 'Profil'),
         ],
       ),
     );
@@ -122,10 +120,13 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: const [
+                    children: [
                       _CompletedTasksCard(),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       _ProjectPerformanceCard(),
+                      const SizedBox(height: 16),
+                      // Haftalık Talep Sayısı Chart
+                       _WeeklyRequestChartCard(),
                     ],
                   ),
                 ),
@@ -284,4 +285,141 @@ class _StatusItem extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Haftalık Talep Sayısı kartı için ayrı widget
+class _WeeklyRequestChartCard extends StatelessWidget {
+  const _WeeklyRequestChartCard({Key? key}) : super(key: key);
+
+  /// Geçici (mock) haftalık talep verisi
+  final List<double> weeklyData = const [8, 10, 14, 15, 13, 10, 9];
+
+  /// Bar chart için bar gruplarını oluşturan fonksiyon
+  List<BarChartGroupData> getBarGroups(List<double> data) {
+    return List.generate(data.length, (index) {
+      return BarChartGroupData(
+        x: index,
+        barRods: [
+          BarChartRodData(
+            toY: data[index],
+            width: 12,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+            ),
+            rodStackItems: [
+              BarChartRodStackItem(
+                0,
+                data[index],
+                Colors.transparent,
+              ),
+            ],
+            borderRadius: BorderRadius.circular(4),
+          )
+        ],
+        showingTooltipIndicators: [0],
+      );
+    });
+  }
+
+  /// Alt başlıklar için özel widget fonksiyonu
+  Widget getBottomTitleWidget(double value, TitleMeta meta, List<double> data) {
+    const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    final int index = value.toInt();
+    if (index < 0 || index >= data.length) {
+      return const SizedBox.shrink();
+    }
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      space: 4,
+      child: Text(
+        days[index],
+        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  /// BarChartData yapılandırması
+  BarChartData buildBarChartData() {
+    return BarChartData(
+      alignment: BarChartAlignment.spaceAround,
+      maxY: 20,
+      barTouchData: BarTouchData(
+        enabled: true,
+        touchTooltipData: BarTouchTooltipData(
+          tooltipBgColor: Colors.transparent,
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            return BarTooltipItem(
+              '${rod.toY.toStringAsFixed(1)}',
+              const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            );
+          },
+        ),
+      ),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 30,
+            getTitlesWidget: (value, meta) => getBottomTitleWidget(value, meta, weeklyData),
+          ),
+        ),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      borderData: FlBorderData(show: false),
+      barGroups: getBarGroups(weeklyData),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+      color: Theme.of(context).cardColor,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              "Haftalık Talep Sayısı",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: BarChart(buildBarChartData()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+BarChartGroupData makeBarGroup(int x, double y) {
+  return BarChartGroupData(
+    x: x,
+    barRods: [
+      BarChartRodData(
+        toY: y,
+        width: 12,
+        borderRadius: BorderRadius.circular(4),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+        ),
+      ),
+    ],
+  );
 }

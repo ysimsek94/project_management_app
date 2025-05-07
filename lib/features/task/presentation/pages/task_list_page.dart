@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
+import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
@@ -12,12 +13,10 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../widgets/date_picker_section.dart';
 
 class TaskListPage extends StatefulWidget {
-  final GetTasksByProjectIdUseCase getTasksUseCase;
   final TaskUseCases taskUsecases;
 
   const TaskListPage({
     super.key,
-    required this.getTasksUseCase,
     required this.taskUsecases,
   });
 
@@ -49,78 +48,91 @@ class _TaskListPageState extends State<TaskListPage> {
     return BlocProvider.value(
       value: _taskCubit,
       child: Scaffold(
-        appBar: AppBar(
-
-            title: const Text("Görev Listesi")),
+        appBar: const CustomAppBar(
+          title: "Görev Listesi",
+          showBackButton: false,
+        ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Non-expandable widgets grouped in a Column
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "${_selectedDate.monthName}, ${_selectedDate.day}",
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${_selectedDate.monthName}, ${_selectedDate.day}",
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      AppButton(
+                        title: "+ Add Task",
+                        onClick: () {
+                          final cubit = _taskCubit;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BlocProvider.value(
+                                value: _taskCubit,
+                                child: const TaskAddPage(),
+                              ),
+                            ),
+                          ).then((value) {
+                            if (value == true) {
+                              cubit.getTaskList(_selectedDate.yMd);
+                            }
+                          });
+                        },
+                        minWidth: 45,
+                        height: 35,
+                      ),
+                    ],
                   ),
-                  AppButton(
-                    title: "+ Add Task",
-                    onClick: () {
-                      final cubit = _taskCubit;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BlocProvider.value(
-                            value: _taskCubit,
-                            child: const TaskAddPage(),
-                          ),
-                        ),
-                      ).then((value) {
-                        if (value == true) {
-                          cubit.getTaskList(_selectedDate.yMd);
-                        }
-                      });
+                  AppSizes.gapH12,
+                  SizedBox(
+                    height: 100,
+                    child: DatePickerSection(
+                      currentDate: _selectedDate,
+                      onDateSelected: (date) {
+                        setState(() => _selectedDate = date);
+                        _taskCubit.getTaskList(date.yMd);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today,
+                          color: Theme.of(context).primaryColor, size: 18),
+                      AppSizes.gapH8,
+                      const Text("Tüm Görevler - ",
+                          style: TextStyle(fontSize: 14)),
+                      Text(
+                        _selectedDate.yMd,
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).primaryColor),
+                      ),
+                    ],
+                  ),
+                  AppSizes.gapH16,
+                  AppTextField(
+                    hint: 'Görev ara...',
+                    prefixIcon: Icons.search,
+                    borderRadius: 12,
+                    textEditingController: _searchController,
+                    onChange: (value) {
+                      _taskCubit.search(value);
                     },
-                    minWidth: 45,
-                    height: 35,
                   ),
+                  AppSizes.gapH16,
                 ],
               ),
-              AppSizes.gapH12,
-              DatePickerSection(
-                currentDate: _selectedDate,
-                onDateSelected: (date) {
-                  setState(() => _selectedDate = date);
-                  _taskCubit.getTaskList(date.yMd);
-                },
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(Icons.calendar_today,
-                      color: Theme.of(context).primaryColor, size: 18),
-                  AppSizes.gapH8,
-                  const Text("Tüm Görevler - ", style: TextStyle(fontSize: 14)),
-                  Text(
-                    _selectedDate.yMd,
-                    style: TextStyle(
-                        fontSize: 14, color: Theme.of(context).primaryColor),
-                  ),
-                ],
-              ),
-              AppSizes.gapH16,
-              AppTextField(
-                hint: 'Görev ara...',
-                prefixIcon: Icons.search,
-                borderRadius: 12,
-                textEditingController: _searchController,
-                onChange: (value) {
-                  _taskCubit.search(value);
-                },
-              ),
-              AppSizes.gapH16,
+              // Expandable widget
               Expanded(
                 child: BlocBuilder<TaskCubit, TaskState>(
                   builder: (context, state) {
@@ -155,9 +167,7 @@ class _TaskListPageState extends State<TaskListPage> {
                                     ),
                                   ),
                                 ).then((value) {
-                                  // if (value == true) {
                                   _taskCubit.getTaskList(_selectedDate.yMd);
-                                  //}
                                 });
                               },
                               child: Card(

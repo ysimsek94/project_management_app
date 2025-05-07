@@ -9,6 +9,7 @@ class AppDropdown<T> extends StatelessWidget {
   final double borderRadius;
 
   const AppDropdown({
+
     Key? key,
     this.value,
     required this.items,
@@ -20,22 +21,29 @@ class AppDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<T>(
-      value: value,
-      hint: hint,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Theme.of(context).primaryColor),
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        canvasColor: Colors.white,
       ),
-      items: items,
-      onChanged: onChanged,
-      validator: validator,
+      child: DropdownButtonFormField<T>(
+        value: value,
+        hint: hint,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        ),
+        items: items,
+        onChanged: onChanged,
+        validator: validator,
+      ),
     );
   }
 }

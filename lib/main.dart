@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/network/api_service.dart';
 import 'core/preferences/AppPreferences.dart';
-import 'core/utils/app_thems.dart';
+import 'core/utils/app_theme.dart';
 import 'features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/usecases/login_usecase.dart';
@@ -44,13 +44,11 @@ Future<void> main() async {
   // Task
   final taskDataSource = TaskRemoteDataSourceImpl(apiService);
   final taskRepo = TaskRepositoryImpl(taskDataSource);
-  final getTasksUseCase = GetTasksByProjectIdUseCase(taskRepo);
   final taskUseCases = TaskUseCases(taskRepo);
 
   runApp(MyApp(
     loginUseCase: loginUseCase,
     getProjectsUseCase: getProjectsUseCase,
-    getTasksUseCase: getTasksUseCase,
     taskUseCases: taskUseCases,
   ));
 }
@@ -58,14 +56,12 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   final LoginUseCase loginUseCase;
   final GetProjectsUseCase getProjectsUseCase;
-  final GetTasksByProjectIdUseCase getTasksUseCase;
   final TaskUseCases taskUseCases;
 
   const MyApp({
     super.key,
     required this.loginUseCase,
     required this.getProjectsUseCase,
-    required this.getTasksUseCase,
     required this.taskUseCases,
   });
 
@@ -95,14 +91,13 @@ class MyApp extends StatelessWidget {
           ),
           routes: {
             '/': (context) => BlocProvider(
-                  create: (_) => LoginCubit(loginUseCase),
-                  child: const LoginPage(),
-                ),
+              create: (_) => LoginCubit(loginUseCase),
+              child: const LoginPage(),
+            ),
             '/home': (context) => HomePage(
-                  getProjectsUseCase: getProjectsUseCase,
-                  getTasksUseCase: getTasksUseCase,
-                  taskUseCases: taskUseCases,
-                ),
+              getProjectsUseCase: getProjectsUseCase,
+              taskUseCases: taskUseCases,
+            ),
           },
         );
       },

@@ -1,13 +1,14 @@
-/// Bu sayfa, kullanıcıya etkileşimli bir harita göstererek belirli bir modda
-/// konum (nokta, çoklu nokta veya çizgi) seçmesini sağlar.
-/// Seçilen konum(lar), onResult callback'i ile geri döndürülür.
+
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
+import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
+import '../widgets/app_map_selector.dart';
 
-import '../widgets/map_selector.dart';
-
+/// Bu sayfa, kullanıcıya etkileşimli bir harita göstererek belirli bir modda
+/// konum (nokta, çoklu nokta veya çizgi) seçmesini sağlar.
+/// Seçilen konum(lar), onResult callback'i ile geri döndürülür.
 class MapInteractionPage extends StatefulWidget {
   final LatLng? initialLocation;
   final List<LatLng>? initialPoints;
@@ -54,7 +55,7 @@ class _MapInteractionPageState extends State<MapInteractionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: CustomAppBar(title: widget.title),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

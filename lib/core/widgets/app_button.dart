@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_management_app/core/extensions/extensions.dart';
+import 'package:project_management_app/core/extensions/theme_extensions.dart';
 
 import '../utils/app_styles.dart';
 
