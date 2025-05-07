@@ -19,14 +19,16 @@ import 'features/project/data/repositories/project_repository_impl.dart';
 import 'features/project/domain/usecases/get_projects_usecase.dart';
 import 'features/task/data/datasources/task_remote_data_source_impl.dart';
 import 'features/task/data/repositories/task_repository_impl.dart';
-import 'features/task/domain/usecases/get_tasks_by_project_id_usecase.dart';
 
 import 'features/task/domain/usecases/task_usecases.dart';
+import 'injection.dart';
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppPreferences.init();
+
+  configureDependencies();
 
   final dio = Dio();
   final apiService = ApiService(dio);

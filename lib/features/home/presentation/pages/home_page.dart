@@ -3,12 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import 'package:project_management_app/features/project/domain/usecases/get_projects_usecase.dart';
-import 'package:project_management_app/features/task/domain/usecases/get_tasks_by_project_id_usecase.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
 
+import 'package:project_management_app/injection.dart';
+
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/utils/app_styles.dart';
+import '../../../profil/domain/usecases/profile_usecases.dart';
+import '../../../profil/presentation/bloc/profile_cubit.dart';
+import '../../../profil/presentation/pages/profile_page.dart';
 import '../../../task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
@@ -45,7 +49,11 @@ class _HomePageState extends State<HomePage> {
           taskUsecases: widget.taskUseCases,
         ),
       ),
-     // ProfilePage(), // Profil sayfası burada ekleniyor
+      // Profile sekmesi
+      BlocProvider(
+        create: (_) => ProfileCubit(getIt<ProfileUseCase>()),
+        child: const ProfilePage(),
+      ),
     ];
 
     return Scaffold(
@@ -84,27 +92,10 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF7B61FF), Color(0xFF4DA6FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.person, color: Colors.white, size: 26),
-                      ),
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Icon(Icons.person, size: 45, color: Colors.white),
                     ),
                     const SizedBox(width: 16),
                     Text(
