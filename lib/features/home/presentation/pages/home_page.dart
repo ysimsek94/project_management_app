@@ -5,9 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:project_management_app/features/project/domain/usecases/get_projects_usecase.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
-
 import 'package:project_management_app/injection.dart';
-
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/utils/app_styles.dart';
 import '../../../profil/domain/usecases/profile_usecases.dart';
