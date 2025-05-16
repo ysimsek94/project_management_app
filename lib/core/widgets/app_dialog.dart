@@ -13,44 +13,48 @@ class AppDialog {
       context: context,
       builder: (context) {
         return Dialog(
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
           elevation: 0,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF7F9FC),
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFFE4E7EB)),
-                    ),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onPrimary,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor:
+                        Theme.of(context).primaryColor.withOpacity(0.1),
+                    child: Icon(icon,
+                        size: 24, color: Theme.of(context).primaryColor),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(icon, color: Colors.blue),
-                      AppSizes.gapW8,
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
+                  AppSizes.gapH16,
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: content,
-                ),
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(children: actions),
-                ),
-              ],
+                  AppSizes.gapH8,
+                  DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodyMedium!,
+                    textAlign: TextAlign.center
+                    ,
+                    child: content,
+                  ),
+                  AppSizes.gapH24,
+                  Row(
+                    children: actions,
+                  ),
+                ],
+              ),
             ),
           ),
         );

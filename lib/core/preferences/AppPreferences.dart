@@ -29,6 +29,12 @@ class AppPreferences {
 
   static String? get adSoyad => _prefs?.getString('adSoyad');
 
+  static Future<void> setRoles(List<String> roles) async {
+    await _prefs?.setStringList('roles', roles);
+  }
+
+  static List<String>? get roles => _prefs?.getStringList('roles');
+
   /// Clear all saved preferences (for logout)
   static Future<void> clear() async {
     await _prefs?.clear();

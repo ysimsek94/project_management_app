@@ -14,6 +14,11 @@ class AuthRepositoryImpl implements AuthRepository {
     final request = LoginRequestModel(email: email, password: password);
     final response = await remoteDataSource.login(request);
 
-    return User(username: response.username, token: response.token, adSoyad:response.adSoyad);
+    return User(
+      username: response.username,
+      token: response.token,
+      adSoyad: response.adSoyad,
+      roles: response.roles,
+    );
   }
 }

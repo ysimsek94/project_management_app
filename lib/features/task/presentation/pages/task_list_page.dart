@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
+import 'package:project_management_app/core/extensions/string_extensions.dart';
+import 'package:project_management_app/core/extensions/role_extensions.dart';
 import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
@@ -69,27 +71,28 @@ class _TaskListPageState extends State<TaskListPage> {
                         style: const TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold),
                       ),
-                      AppButton(
-                        title: "+ Add Task",
-                        onClick: () {
-                          final cubit = _taskCubit;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BlocProvider.value(
-                                value: _taskCubit,
-                                child: const TaskAddPage(),
+                      if (context.hasRole('admin'))
+                        AppButton(
+                          title: "+ Add Task",
+                          onClick: () {
+                            final cubit = _taskCubit;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BlocProvider.value(
+                                  value: _taskCubit,
+                                  child: const TaskAddPage(),
+                                ),
                               ),
-                            ),
-                          ).then((value) {
-                            if (value == true) {
-                              cubit.getTaskList(_selectedDate.yMd);
-                            }
-                          });
-                        },
-                        minWidth: 45,
-                        height: 35,
-                      ),
+                            ).then((value) {
+                              if (value == true) {
+                                cubit.getTaskList(_selectedDate.yMd);
+                              }
+                            });
+                          },
+                          minWidth: 45,
+                          height: 35,
+                        ),
                     ],
                   ),
                   AppSizes.gapH12,
@@ -157,7 +160,9 @@ class _TaskListPageState extends State<TaskListPage> {
                           itemBuilder: (context, index) {
                             final task = tasks[index];
                             return InkWell(
+                              borderRadius: BorderRadius.circular(12),
                               onTap: () {
+                                // Görev detay sayfasına navigasyon
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -167,76 +172,96 @@ class _TaskListPageState extends State<TaskListPage> {
                                     ),
                                   ),
                                 ).then((value) {
-                                  _taskCubit.getTaskList(_selectedDate.yMd);
+                                  if (value == true) {
+                                    _taskCubit.getTaskList(_selectedDate.yMd);
+                                  }
                                 });
                               },
                               child: Card(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16)),
-                                elevation: 4,
-                                margin: const EdgeInsets.only(bottom: 16),
-                                color: const Color(0xFFF5F4FF),
+                                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 1,
                                 child: Padding(
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      // Üst satır: Proje, faz ve durum
                                       Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Expanded(
-                                            child: Text(
-                                              task.title,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black87,
+                                          // Proje ve faz adları
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "Proje Adı",
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleMedium
+                                                    ?.copyWith(fontWeight: FontWeight.bold),
                                               ),
-                                            ),
+                                           AppSizes.gapH4,
+                                              Text(
+                                                "Faz Adı",
+                                                style: Theme.of(context).textTheme.bodyMedium,
+                                              ),
+                                            ],
                                           ),
+                                          // Durum etiketi
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color:
-                                                  _getStatusColor(task.status)
-                                                      .withOpacity(0.2),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
+                                              color: _getStatusColor(task.status)
+                                                  .withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
                                             ),
                                             child: Text(
-                                              task.status,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: _getStatusColor(
-                                                    task.status),
-                                              ),
+                                              task.status.capitalize(),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: _getStatusColor(task.status),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
                                             ),
                                           ),
                                         ],
                                       ),
                                       AppSizes.gapH12,
-                                      LinearProgressIndicator(
-                                        value: _calculateProgress(task.status),
-                                        backgroundColor: Colors.grey[300],
-                                        color: Colors.redAccent,
-                                        minHeight: 5,
+                                      // Görev başlığı
+                                      Text(
+                                        task.title,
+                                        style: Theme.of(context).textTheme.bodyLarge,
                                       ),
                                       AppSizes.gapH12,
+                                      // Tarihler satırı
                                       Row(
                                         children: [
-                                          const Icon(Icons.access_time,
-                                              size: 16, color: Colors.grey),
-                                          const SizedBox(width: 4),
+                                          Icon(Icons.calendar_today,
+                                              size: 16,
+                                              color: Theme.of(context)
+                                                  .primaryColor),
+                                          AppSizes.gapW4,
                                           Text(
-                                            task.dueTime != null
-                                                ? task.dueTime!.split(' ').last
-                                                : "N/A",
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600]),
+                                            'Başlangıç: ${DateTime.now().yMd}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                          AppSizes.gapW16,
+                                          Icon(Icons.calendar_today,
+                                              size: 16,
+                                              color: Theme.of(context)
+                                                  .primaryColor),
+                                          AppSizes.gapW4,
+                                          Text(
+                                            'Bitiş: ${DateTime.now().yMd}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
                                           ),
                                         ],
                                       ),

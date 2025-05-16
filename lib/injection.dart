@@ -1,13 +1,29 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:project_management_app/core/network/api_service.dart';
-import 'package:project_management_app/features/profil/data/datasources/profile_remote_data_source_impl.dart';
-import 'package:project_management_app/features/profil/data/repositories/profile_repository_impl.dart';
-import 'package:project_management_app/features/profil/domain/repositories/profile_repository.dart';
-import 'package:project_management_app/features/profil/data/datasources/profile_remote_data_source.dart';
-
-import 'features/profil/domain/usecases/profile_usecases.dart';
-
+import 'package:project_management_app/features/profile/data/datasources/profile_remote_data_source_impl.dart';
+import 'package:project_management_app/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:project_management_app/features/profile/domain/repositories/profile_repository.dart';
+import 'package:project_management_app/features/profile/data/datasources/profile_remote_data_source.dart';
+import 'features/auth/data/datasources/auth_remote_data_source.dart';
+import 'features/auth/data/datasources/auth_remote_data_source_impl.dart';
+import 'features/auth/data/repositories/auth_repository_impl.dart';
+import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/profile/domain/usecases/profile_usecases.dart';
+import 'package:project_management_app/features/auth/domain/usecases/login_usecase.dart';
+import 'package:project_management_app/features/auth/presentation/bloc/login_cubit.dart';
+import 'package:project_management_app/features/task/data/datasources/task_remote_data_source_impl.dart';
+import 'package:project_management_app/features/task/data/repositories/task_repository_impl.dart';
+import 'package:project_management_app/features/task/domain/repositories/task_repository.dart';
+import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
+import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
+import 'features/project/data/datasources/project_remote_data_source.dart';
+import 'features/project/data/datasources/project_remote_data_source_impl.dart';
+import 'features/project/data/repositories/project_repository_impl.dart';
+import 'features/project/domain/repositories/project_repository.dart';
+import 'features/project/domain/usecases/get_projects_usecase.dart';
+import 'features/project/presentation/bloc/project_cubit.dart';
+import 'features/task/data/datasources/task_remote_data_source.dart';
 
 // Register the GetIt instance
 final getIt = GetIt.instance;
@@ -17,7 +33,6 @@ void configureDependencies() {
   getIt.registerLazySingleton<Dio>(
     () => Dio(),
   );
-
   // Core network and API services
   getIt.registerLazySingleton<ApiService>(
     () => ApiService(getIt<Dio>()),
@@ -32,5 +47,47 @@ void configureDependencies() {
   );
   getIt.registerLazySingleton<ProfileUseCase>(
     () => ProfileUseCase(getIt<ProfileRepository>()),
+  );
+
+  // ===== Auth Feature =====
+  getIt.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(apiService: getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(remoteDataSource: getIt<AuthRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<LoginUseCase>(
+    () => LoginUseCase(getIt<AuthRepository>()),
+  );
+  getIt.registerFactory<LoginCubit>(
+    () => LoginCubit(getIt<LoginUseCase>()),
+  );
+
+  // ===== Project Feature =====
+  getIt.registerLazySingleton<ProjectRemoteDataSource>(
+    () => ProjectRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<ProjectRepository>(
+    () => ProjectRepositoryImpl(getIt<ProjectRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<GetProjectsUseCase>(
+    () => GetProjectsUseCase(getIt<ProjectRepository>()),
+  );
+  getIt.registerFactory<ProjectCubit>(
+    () => ProjectCubit(getIt<GetProjectsUseCase>()),
+  );
+
+  // ===== Task Feature =====
+  getIt.registerLazySingleton<TaskRemoteDataSource>(
+    () => TaskRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<TaskRepository>(
+    () => TaskRepositoryImpl(getIt<TaskRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<TaskUseCases>(
+    () => TaskUseCases(getIt<TaskRepository>()),
+  );
+  getIt.registerFactory<TaskCubit>(
+    () => TaskCubit(getIt<TaskUseCases>()),
   );
 }

@@ -13,7 +13,7 @@ class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit(this.profileUseCase) : super(ProfileInitial());
 
   /// Login sonrası SharedPreferences’ta tuttuğun userId’yi buraya
-  /// verip çağırdığında API’den profil bilgisini çeker.
+  /// verip çağırdığında API’den profile bilgisini çeker.
   void getProfile(String userId) async {
     emit(ProfileLoading());
     try {

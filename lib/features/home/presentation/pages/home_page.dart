@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fl_chart/fl_chart.dart';
-
+import 'package:project_management_app/core/constants/app_sizes.dart';
 import 'package:project_management_app/features/project/domain/usecases/get_projects_usecase.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
 import 'package:project_management_app/injection.dart';
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/utils/app_styles.dart';
-import '../../../profil/domain/usecases/profile_usecases.dart';
-import '../../../profil/presentation/bloc/profile_cubit.dart';
-import '../../../profil/presentation/pages/profile_page.dart';
+import '../../../profile/domain/usecases/profile_usecases.dart';
+import '../../../profile/presentation/bloc/profile_cubit.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
- // Ensure this import exists
+import 'package:project_management_app/core/extensions/role_extensions.dart';
+import '../../presentation//widgets/completed_tasks_card.dart';
+import '../../presentation//widgets/projects_performance_card.dart';
+import '../../presentation/widgets/weekly_request_task_card.dart';
 
 class HomePage extends StatefulWidget {
   final GetProjectsUseCase getProjectsUseCase;
@@ -33,91 +36,74 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
+  /// Sayfa içeriği ve alt menülerin yönetimi
   @override
   Widget build(BuildContext context) {
-    /// Uygulamadaki alt sekmelerin içeriklerini temsil eden sayfa listesi
-    final List<Widget> pages = [
-      /// Ana gösterge paneli - kullanıcıya genel bir bakış sunar
-      _buildHomeContent(),
-
-      /// Görev listesi sayfası - projelere göre görevleri gösterir
-      BlocProvider(
-        create: (_) => TaskCubit(widget.taskUseCases),
-        child: TaskListPage(
-          taskUsecases: widget.taskUseCases,
+    // Alt sekme sayfalarını ve menü öğelerini birlikte oluştur (senkronizasyon için)
+    final isAdmin = context.hasRole('admin');
+    final List<Map<String, dynamic>> navConfig = [
+      {
+        'page': _buildHomeBody(),
+        'item': const AppBottomNavBarItem(
+          icon: Icons.home_outlined,
+          label: 'Ana Sayfa',
         ),
-      ),
-      // Profile sekmesi
-      BlocProvider(
-        create: (_) => ProfileCubit(getIt<ProfileUseCase>()),
-        child: const ProfilePage(),
-      ),
+      },
+      {
+        'page': BlocProvider(
+          create: (_) => TaskCubit(widget.taskUseCases),
+          child: TaskListPage(
+            taskUsecases: widget.taskUseCases,
+          ),
+        ),
+        'item': const AppBottomNavBarItem(
+          icon: Icons.list_alt_outlined,
+          label: 'Görevler',
+        ),
+      },
+      if (isAdmin)
+        {
+          'page': BlocProvider(
+            create: (_) => ProfileCubit(getIt<ProfileUseCase>()),
+            child: const ProfilePage(),
+          ),
+          'item': const AppBottomNavBarItem(
+            icon: Icons.person,
+            label: 'Profil',
+          ),
+        },
     ];
+
+    final List<Widget> pages =
+        navConfig.map<Widget>((e) => e['page'] as Widget).toList();
+    final List<AppBottomNavBarItem> items =
+        navConfig.map<AppBottomNavBarItem>((e) => e['item'] as AppBottomNavBarItem).toList();
 
     return Scaffold(
       body: pages[_currentIndex],
       bottomNavigationBar: AppBottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          AppBottomNavBarItem(icon: Icons.home_outlined, label: 'Ana Sayfa'),
-          AppBottomNavBarItem(icon: Icons.list_alt_outlined, label: 'Görevler'),
-          AppBottomNavBarItem(icon: Icons.person, label: 'Profil'),
-        ],
+        items: items,
       ),
     );
   }
 
-  Widget _buildHomeContent() {
+  /// Ana sayfanın gövdesini oluşturan ana widget
+  Widget _buildHomeBody() {
     return Stack(
       children: [
-        Container(
-          height: 250,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [context.theme.primaryColor, Colors.white10],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
+        _buildGradientBackground(),
         SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Theme.of(context).primaryColor,
-                      child: Icon(Icons.person, size: 45, color: Colors.white),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      AppPreferences.adSoyad ?? "Ana Sayfa",
-                      style: AppTypography.bold10().copyWith(fontSize: 24, fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+              AppSizes.gapH16,
+              _buildHeaderSection(),
+              AppSizes.gapH24,
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _CompletedTasksCard(),
-                      const SizedBox(height: 16),
-                      _ProjectPerformanceCard(),
-                      const SizedBox(height: 16),
-                      // Haftalık Talep Sayısı Chart
-                       _WeeklyRequestChartCard(),
-                    ],
-                  ),
+                  child: _buildDashboardCards(),
                 ),
               ),
             ],
@@ -126,289 +112,77 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
-}
 
-
-class _CompletedTasksCard extends StatelessWidget {
-  const _CompletedTasksCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text("Tamamlanan Görevler",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _StatusItem(
-                    label: "Tamamlandı", percent: 0.72, color: Colors.green),
-                _StatusItem(
-                    label: "Bekliyor", percent: 0.18, color: Colors.orange),
-                _StatusItem(
-                    label: "İptal Edildi", percent: 0.10, color: Colors.red),
-              ],
-            ),
-          ],
+  /// Üst kısımdaki degrade arka plan
+  Widget _buildGradientBackground() {
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [context.theme.primaryColor, Colors.white10],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
     );
   }
-}
 
-class _ProjectPerformanceCard extends StatelessWidget {
-  const _ProjectPerformanceCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Projelerin Performansı",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 200,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: 100,
-                  barTouchData: BarTouchData(enabled: false),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        interval: 20,
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, _) {
-                          switch (value.toInt()) {
-                            case 0:
-                              return const Text('Proj 1');
-                            case 1:
-                              return const Text('Proj 2');
-                            case 2:
-                              return const Text('Proj 3');
-                            default:
-                              return const Text('');
-                          }
-                        },
-                      ),
-                    ),
-                    topTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles:
-                        AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  barGroups: [
-                    BarChartGroupData(x: 0, barRods: [
-                      BarChartRodData(toY: 80, color: Colors.blue, width: 18)
-                    ]),
-                    BarChartGroupData(x: 1, barRods: [
-                      BarChartRodData(toY: 45, color: Colors.orange, width: 18)
-                    ]),
-                    BarChartGroupData(x: 2, barRods: [
-                      BarChartRodData(toY: 60, color: Colors.green, width: 18)
-                    ]),
-                  ],
-                ),
-              ),
+  /// Profil ve kullanıcı başlığı
+  Widget _buildHeaderSection() {
+    final adSoyad = (AppPreferences.adSoyad ?? '').trim();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: Theme.of(context).primaryColor,
+            child: const Icon(Icons.person, size: 45, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            adSoyad.isNotEmpty ? adSoyad : "Kullanıcı",
+            style: AppTypography.bold10().copyWith(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusItem extends StatelessWidget {
-  final String label;
-  final double percent;
-  final Color color;
-
-  const _StatusItem({
-    required this.label,
-    required this.percent,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 70,
-              height: 70,
-              child: CircularProgressIndicator(
-                value: percent,
-                strokeWidth: 8,
-                backgroundColor: color.withOpacity(0.2),
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-            ),
-            Text("${(percent * 100).toInt()}%",
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 14)),
-      ],
-    );
-  }
-}
-
-/// Haftalık Talep Sayısı kartı için ayrı widget
-class _WeeklyRequestChartCard extends StatelessWidget {
-  const _WeeklyRequestChartCard({Key? key}) : super(key: key);
-
-  /// Geçici (mock) haftalık talep verisi
-  final List<double> weeklyData = const [8, 10, 14, 15, 13, 10, 9];
-
-  /// Bar chart için bar gruplarını oluşturan fonksiyon
-  List<BarChartGroupData> getBarGroups(List<double> data) {
-    return List.generate(data.length, (index) {
-      return BarChartGroupData(
-        x: index,
-        barRods: [
-          BarChartRodData(
-            toY: data[index],
-            width: 12,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-            ),
-            rodStackItems: [
-              BarChartRodStackItem(
-                0,
-                data[index],
-                Colors.transparent,
-              ),
-            ],
-            borderRadius: BorderRadius.circular(4),
-          )
+          ),
         ],
-        showingTooltipIndicators: [0],
-      );
-    });
-  }
-
-  /// Alt başlıklar için özel widget fonksiyonu
-  Widget getBottomTitleWidget(double value, TitleMeta meta, List<double> data) {
-    const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-    final int index = value.toInt();
-    if (index < 0 || index >= data.length) {
-      return const SizedBox.shrink();
-    }
-    return SideTitleWidget(
-      axisSide: meta.axisSide,
-      space: 4,
-      child: Text(
-        days[index],
-        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  /// BarChartData yapılandırması
-  BarChartData buildBarChartData() {
-    return BarChartData(
-      alignment: BarChartAlignment.spaceAround,
-      maxY: 20,
-      barTouchData: BarTouchData(
-        enabled: true,
-        touchTooltipData: BarTouchTooltipData(
-          tooltipBgColor: Colors.transparent,
-          getTooltipItem: (group, groupIndex, rod, rodIndex) {
-            return BarTooltipItem(
-              '${rod.toY.toStringAsFixed(1)}',
-              const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            );
-          },
-        ),
-      ),
-      titlesData: FlTitlesData(
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-        bottomTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 30,
-            getTitlesWidget: (value, meta) => getBottomTitleWidget(value, meta, weeklyData),
-          ),
-        ),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      ),
-      borderData: FlBorderData(show: false),
-      barGroups: getBarGroups(weeklyData),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-      color: Theme.of(context).cardColor,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Text(
-              "Haftalık Talep Sayısı",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: BarChart(buildBarChartData()),
-            ),
+  /// Gösterge paneli kartları (tamamlanan görevler, performans, haftalık istekler)
+  Widget _buildDashboardCards() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        CompletedTasksCard(
+          statusItems: [
+            StatusItemData(label: "Tamamlandı", percent: 0.73, color: Colors.green),
+            StatusItemData(label: "Bekliyor", percent: 0.18, color: Colors.orange),
+            StatusItemData(label: "İptal Edildi", percent: 0.09, color: Colors.red),
           ],
         ),
-      ),
+        AppSizes.gapH16,
+        if (context.hasRole('admin'))
+          ProjectPerformanceCard(
+            performanceData: [
+              ProjectPerformanceData(label: 'Proj 1', percent: 80, color: Colors.blue),
+              ProjectPerformanceData(label: 'Proj 2', percent: 55, color: Colors.orange),
+              ProjectPerformanceData(label: 'Proj 3', percent: 60, color: Colors.green),
+              ProjectPerformanceData(label: 'Proj 4', percent: 45, color: Colors.blueGrey),
+              ProjectPerformanceData(label: 'Proj 5', percent: 89, color: Colors.redAccent),
+              ProjectPerformanceData(label: 'Proj 6', percent: 96, color: Colors.teal),
+            ],
+          ),
+        AppSizes.gapH16,
+        WeeklyRequestChartCard(
+          weeklyData: const [8, 10, 14, 15, 13, 10, 9],
+          labels: const ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+        ),
+      ],
     );
   }
-}
-
-BarChartGroupData makeBarGroup(int x, double y) {
-  return BarChartGroupData(
-    x: x,
-    barRods: [
-      BarChartRodData(
-        toY: y,
-        width: 12,
-        borderRadius: BorderRadius.circular(4),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-        ),
-      ),
-    ],
-  );
 }

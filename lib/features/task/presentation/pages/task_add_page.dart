@@ -1,26 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:project_management_app/core/constants/app_sizes.dart';
+import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/extensions/string_extensions.dart';
-import 'package:project_management_app/core/page/gallery_page.dart';
 import 'package:project_management_app/core/widgets/app_alerts.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
-import 'package:project_management_app/core/widgets/app_text_field.dart';
-import 'package:project_management_app/core/widgets/app_dropdown.dart';
+import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/core/widgets/app_dialog.dart';
+import 'package:project_management_app/core/widgets/app_dropdown.dart';
+import 'package:project_management_app/core/widgets/app_text_field.dart';
+import 'package:project_management_app/core/widgets/app_date_time_picker.dart';
+import 'package:project_management_app/core/widgets/app_map_selector.dart';
+import 'package:project_management_app/core/utils/app_map_utils.dart';
+import 'package:project_management_app/features/task/domain/entities/task.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
-import '../../../../core/page/map_interaction_page.dart';
-import '../../../../core/utils/app_map_utils.dart';
-import '../../../../core/widgets/app_date_time_picker.dart';
-import '../../../../core/widgets/app_map_selector.dart';
-import '../../domain/entities/task.dart';
+import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
 
-/// Görev oluşturma veya düzenleme sayfası.
+import '../../../../core/page/gallery_page.dart';
+import '../../../../core/page/map_interaction_page.dart';
+
+/// Görev ekleme/düzenleme sayfası.
 class TaskAddPage extends StatefulWidget {
   final Task? task;
 
@@ -32,45 +34,35 @@ class TaskAddPage extends StatefulWidget {
 
 class _TaskAddPageState extends State<TaskAddPage> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _titleCtrl;
-  late final TextEditingController _descCtrl;
-  late final TextEditingController _dateCtrl;
-  late final TextEditingController _timeCtrl;
+
+  // Controller tanımları
+  late TextEditingController _titleCtrl;
+  late TextEditingController _descCtrl;
+  late TextEditingController _dateCtrl;
+  late TextEditingController _timeCtrl;
+
+  // Durum seçeneği ve varsayılan zaman/konum
   String? _status;
   DateTime _selectedDateTime = DateTime.now();
   LatLng? _selectedLatLng;
 
-  // Ön tanımlı görev durumu seçenekleri.
+  // Mevcut görev durumu seçenekleri
   static const List<String> _statusOptions = [
     'yapılacak',
     'devam ediyor',
     'tamamlandı',
   ];
 
-  /// Sayfa yüklendiğinde mevcut görev varsa veriler doldurulur.
   @override
   void initState() {
     super.initState();
-    // Initialize controllers with existing data or empty.
-    _titleCtrl = TextEditingController(text: widget.task?.title ?? '');
-    _descCtrl = TextEditingController(text: widget.task?.description ?? '');
-    _status = widget.task?.status;
-    if (widget.task?.dueTime != null) {
-      _selectedDateTime =
-          DateTime.tryParse(widget.task!.dueTime!) ?? DateTime.now();
-    }
-    if (widget.task?.latitude != null && widget.task?.longitude != null) {
-      _selectedLatLng = LatLng(widget.task!.latitude!, widget.task!.longitude!);
-    }
-    _dateCtrl = TextEditingController(
-        text: DateFormat('dd/MM/yyyy').format(_selectedDateTime));
-    _timeCtrl = TextEditingController(
-        text: DateFormat('HH:mm').format(_selectedDateTime));
+    _initControllers();
+    _loadTaskData();
   }
 
   @override
   void dispose() {
-    // Kontrolleri serbest bırak
+    // Controller’ları serbest bırak
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _dateCtrl.dispose();
@@ -78,12 +70,32 @@ class _TaskAddPageState extends State<TaskAddPage> {
     super.dispose();
   }
 
-  /// Form doğrulanır ve görev Cubit'e gönderilir (ekle/güncelleme).
-  void _submit() {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  /// Controller’ları ilk değerlerle oluşturur
+  void _initControllers() {
+    _titleCtrl = TextEditingController(text: widget.task?.title ?? '');
+    _descCtrl = TextEditingController(text: widget.task?.description ?? '');
+    _dateCtrl = TextEditingController(text: _selectedDateTime.yMd,);
+    _timeCtrl = TextEditingController(text: _selectedDateTime.hm);
+    _status = widget.task?.status;
+  }
+
+  /// Varsayılan tarih, saat ve konumu yükler
+  void _loadTaskData() {
+    if (widget.task?.dueTime != null) {
+      _selectedDateTime =
+          DateTime.tryParse(widget.task!.dueTime!) ?? _selectedDateTime;
     }
-    // Bloc/Cubit üzerinden gönder.
+    if (widget.task?.latitude != null && widget.task?.longitude != null) {
+      _selectedLatLng = LatLng(widget.task!.latitude!, widget.task!.longitude!);
+    }
+    // Controller metinlerini güncelle
+    _dateCtrl.text = _selectedDateTime.yMd;
+    _timeCtrl.text = _selectedDateTime.hm;
+  }
+
+  /// Form geçerliyse Cubit’e ekle/güncelle gönderir
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
     final task = Task(
       id: widget.task?.id ?? '',
       title: _titleCtrl.text.trim(),
@@ -109,221 +121,223 @@ class _TaskAddPageState extends State<TaskAddPage> {
       ),
       body: SafeArea(
         child: BlocConsumer<TaskCubit, TaskState>(
-          // Görev başarıyla eklendi/güncellendiğinde ekrana bildirim göster ve geri dön
-          listener: (context, state) {
-            if (state is TaskCreateSuccess || state is TaskUpdateSuccess) {
-              final message =
-                  widget.task == null ? 'Görev eklendi.' : 'Görev güncellendi.';
-              AppAlerts.showSuccess(context, message);
-              Navigator.of(context).pop(true);
-            } else if (state is TaskFailure) {
-              AppAlerts.showError(context, state.message);
-            }
-          },
+          listener: _blocListener,
           builder: (context, state) {
-            final isLoading = state is TaskOperationInProgress;
-            return Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Başlık girdi alanı
-                      AppTextField(
-                        hint: 'Başlık',
-                        textEditingController: _titleCtrl,
-                        validator: (val) => val == null || val.isEmpty
-                            ? 'Lütfen başlık giriniz'
-                            : null,
-                      ),
-                      AppSizes.gapH20,
-                      // Açıklama alanı
-                      AppTextField(
-                        hint: 'Açıklama',
-                        textEditingController: _descCtrl,
-                        validator: (val) => val == null || val.isEmpty
-                            ? 'Lütfen açıklama giriniz'
-                            : null,
-                      ),
-                      AppSizes.gapH32,
-                      // Tarih ve Saat seçim alanları
-                      Row(
-                        children: [
-                          Expanded(
-                            // Tarih seçimi için input alanı (sadece gösterim, tıklanabilir)
-                            child: AppTextField(
-                              hint: "Tarih",
-                              textEditingController: _dateCtrl,
-                              readOnly: true,
-                              onTap: () async {
-                                final picked = await DateTimePickers.pickDate(
-                                    context, _selectedDateTime);
-                                if (picked != null) {
-                                  setState(() {
-                                    _selectedDateTime = picked;
-                                    _dateCtrl.text =
-                                        DateFormat('dd/MM/yyyy').format(picked);
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          AppSizes.gapW12,
-                          Expanded(
-                            // Saat seçimi için input alanı (sadece gösterim, tıklanabilir)
-                            child: AppTextField(
-                              hint: "Saat",
-                              textEditingController: _timeCtrl,
-                              readOnly: true,
-                              onTap: () async {
-                                final picked = await DateTimePickers.pickTime(
-                                    context, _selectedDateTime);
-                                if (picked != null) {
-                                  setState(() {
-                                    _selectedDateTime = picked;
-                                    _timeCtrl.text =
-                                        DateFormat('HH:mm').format(picked);
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      AppSizes.gapH32,
-                      // Durum seçimi dropdown menü
-                      AppDropdown<String>(
-                        value: _status,
-                        hint: const Text('Durum seçiniz'),
-                        items: _statusOptions
-                            .map((s) => DropdownMenuItem(
-                                value: s, child: Text(s.capitalize())))
-                            .toList(),
-                        onChanged: (v) => setState(() => _status = v),
-                        validator: (v) =>
-                            v == null ? 'Lütfen durum seçiniz' : null,
-                      ),
-                      AppSizes.gapH32,
+            return _buildForm(state is TaskOperationInProgress);
+          },
+        ),
+      ),
+    );
+  }
 
-                      // Galeriye gitmek için buton
-                      AppButton(
-                        title: 'Galeri',
-                        icon: Icons.photo_library_outlined,
-                        onClick: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const GalleryPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      AppSizes.gapH12,
-                      // Harita üzerinde konum seçmek için buton
-                      AppButton(
-                        title: _selectedLatLng != null
-                            ? 'Konum: ${_selectedLatLng!.latitude.toStringAsFixed(4)}, ${_selectedLatLng!.longitude.toStringAsFixed(4)}'
-                            : 'Konum Seç',
-                        icon: Icons.location_on_outlined,
-                        onClick: () async {
-                          // Harita üzerinden konum seçimi işlemini başlatır
-                          LatLng? tempLatLng = _selectedLatLng;
-                          final selected =
-                              await AppDialog.showCustomDialog<LatLng>(
-                            context: context,
-                            title: 'Konum Seç',
-                            icon: Icons.map_outlined,
-                            content: SizedBox(
-                              height: 400,
-                              width: MediaQuery.of(context).size.width * 0.85,
-                              child: MapSelector(
-                                mode: MapInteractionMode.selectSingle,
-                                initialPoints: _selectedLatLng != null
-                                    ? [_selectedLatLng!]
-                                    : null,
-                                onPointsChanged: (points) {
-                                  if (points.isNotEmpty) {
-                                    setState(() => tempLatLng = points.first);
-                                  }
-                                },
-                              ),
-                            ),
-                            actions: [
-                              Expanded(
-                                child: AppButton(
-                                  title: 'İptal',
-                                  type: ButtonType.outlined,
-                                  onClick: () => Navigator.pop(context),
-                                ),
-                              ),
-                              AppSizes.gapW12,
-                              Expanded(
-                                child: AppButton(
-                                  title: 'Kaydet',
-                                  onClick: () =>
-                                      Navigator.pop(context, tempLatLng),
-                                ),
-                              ),
-                            ],
-                          );
-                          if (selected != null) {
-                            setState(() => _selectedLatLng = selected);
-                          }
-                        },
-                      ),
-                      AppSizes.gapH12,
-                      // Harita üzerinde konumu tam ekran açmak için buton
-                      AppButton(
-                        title: 'Konumu Haritada Aç',
-                        icon: Icons.fullscreen,
-                        onClick: () async {
-                          // Harita sayfasına geçiş ve konum seçimi
-                          await Navigator.push<LatLng>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MapInteractionPage(
-                                title: 'Haritada Konum Seç',
-                                mode: MapInteractionMode.selectSingle,
-                                initialPoints: _selectedLatLng != null
-                                    ? [_selectedLatLng!]
-                                    : [],
-                                onResult: (List<LatLng> result) {
-                                  if (result.isNotEmpty) {
-                                    setState(
-                                        () => _selectedLatLng = result.first);
-                                  }
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      if (_selectedLatLng != null) ...[
-                        AppSizes.gapH12,
-                        // Yol tarifi almak için buton
-                        AppButton(
-                            title: 'Yol Tarifi Al',
-                            icon: Icons.directions,
-                            onClick: () =>
-                                MapUtils.openInMaps(_selectedLatLng!)),
-                      ],
-                      AppSizes.gapH32,
-                      // Gönder butonu (Kaydet veya Güncelle)
-                      AppButton(
-                        title: widget.task == null ? 'Kaydet' : 'Güncelle',
-                        isLoading: isLoading,
-                        onClick: _submit,
-                      ),
-                    ],
-                  ),
+  /// Cubit dinleyici: başarılı ya da hata durumunda işlem yapar
+  void _blocListener(BuildContext context, TaskState state) {
+    if (state is TaskCreateSuccess || state is TaskUpdateSuccess) {
+      final msg = widget.task == null ? 'Görev eklendi.' : 'Görev güncellendi.';
+      AppAlerts.showSuccess(context, msg);
+      Navigator.of(context).pop(true);
+    } else if (state is TaskFailure) {
+      AppAlerts.showError(context, state.message);
+    }
+  }
+
+  /// Ana form widget’ı
+  Widget _buildForm(bool isLoading) {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildTextField(_titleCtrl, 'Başlık', 'Lütfen başlık giriniz'),
+            AppSizes.gapH20,
+            _buildTextField(_descCtrl, 'Açıklama', 'Lütfen açıklama giriniz'),
+            AppSizes.gapH32,
+            _buildDateTimePickers(),
+            AppSizes.gapH32,
+            _buildStatusDropdown(),
+            AppSizes.gapH32,
+            _buildMediaButtons(),
+            AppSizes.gapH32,
+            AppButton(
+              title: widget.task == null ? 'Kaydet' : 'Güncelle',
+              isLoading: isLoading,
+              onClick: _submit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Başlık veya açıklama için AppTextField oluşturur
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    String validatorMsg,
+  ) {
+    return AppTextField(
+      hint: hint,
+      textEditingController: controller,
+      validator: (val) => val == null || val.isEmpty ? validatorMsg : null,
+    );
+  }
+
+  /// Tarih ve saat seçici satırı
+  Widget _buildDateTimePickers() {
+    return Row(
+      children: [
+        Expanded(
+          child: AppTextField(
+            hint: 'Tarih',
+            textEditingController: _dateCtrl,
+            readOnly: true,
+            onTap: () async {
+              final picked =
+                  await DateTimePickers.pickDate(context, _selectedDateTime);
+              if (picked != null) {
+                setState(() {
+                  _selectedDateTime = picked;
+                  _dateCtrl.text = picked.yMd;
+                });
+              }
+            },
+          ),
+        ),
+        AppSizes.gapW12,
+        Expanded(
+          child: AppTextField(
+            hint: 'Saat',
+            textEditingController: _timeCtrl,
+            readOnly: true,
+            onTap: () async {
+              final picked =
+                  await DateTimePickers.pickTime(context, _selectedDateTime);
+              if (picked != null) {
+                setState(() {
+                  _selectedDateTime = picked;
+                  _timeCtrl.text = picked.hm;
+                });
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Durum seçimi için dropdown alanı
+  Widget _buildStatusDropdown() {
+    return AppDropdown<String>(
+      value: _status,
+      hint: const Text('Durum seçiniz'),
+      items: _statusOptions
+          .map((s) => DropdownMenuItem(value: s, child: Text(s.capitalize())))
+          .toList(),
+      onChanged: (v) => setState(() => _status = v),
+      validator: (v) => v == null ? 'Lütfen durum seçiniz' : null,
+    );
+  }
+
+  /// Galeri ve harita butonlarını bir arada gösterir
+  Widget _buildMediaButtons() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppButton(
+          title: 'Galeri',
+          icon: Icons.photo_library_outlined,
+          onClick: _openGallery,
+        ),
+        AppSizes.gapH12,
+        AppButton(
+          title: _selectedLatLng != null
+              ? 'Konum: ${_selectedLatLng!.latitude.toStringAsFixed(4)}, ${_selectedLatLng!.longitude.toStringAsFixed(4)}'
+              : 'Konum Seç',
+          icon: Icons.location_on_outlined,
+          onClick: _openMapSelector,
+        ),
+        AppSizes.gapH12,
+        AppButton(
+          title: 'Konumu Haritada Aç',
+          icon: Icons.fullscreen,
+          onClick: () async {
+            // Harita sayfasına geçiş ve konum seçimi
+            await Navigator.push<LatLng>(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MapInteractionPage(
+                  title: 'Haritada Konum Seç',
+                  mode: MapInteractionMode.selectSingle,
+                  initialPoints: _selectedLatLng != null ? [_selectedLatLng!] : [],
+                  onResult: (List<LatLng> result) {
+                    if (result.isNotEmpty) {
+                      setState(() => _selectedLatLng = result.first);
+                    }
+                  },
                 ),
               ),
             );
           },
         ),
-      ),
+        if (_selectedLatLng != null) ...[
+          AppSizes.gapH12,
+          AppButton(
+            title: 'Yol Tarifi Al',
+            icon: Icons.directions,
+            onClick: () => MapUtils.openInMaps(_selectedLatLng!),
+          ),
+        ],
+      ],
     );
+  }
+
+  /// Galeri sayfasını açar
+  Future<void> _openGallery() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const GalleryPage()),
+    );
+  }
+
+  /// Harita seçici dialog’u açar ve sonucu alır
+  Future<void> _openMapSelector() async {
+    LatLng? temp = _selectedLatLng;
+    final result = await AppDialog.showCustomDialog<LatLng>(
+      context: context,
+      title: 'Konum Seç',
+      icon: Icons.map_outlined,
+      content: SizedBox(
+        height: 400,
+        width: MediaQuery.of(context).size.width * 0.85,
+        child: MapSelector(
+          mode: MapInteractionMode.selectSingle,
+          initialPoints: temp != null ? [temp] : null,
+          onPointsChanged: (pts) {
+            if (pts.isNotEmpty) temp = pts.first;
+          },
+        ),
+      ),
+      actions: [
+        Expanded(
+          child: AppButton(
+            title: 'İptal',
+            type: ButtonType.outlined,
+            onClick: () => Navigator.pop(context),
+          ),
+        ),
+        AppSizes.gapW12,
+        Expanded(
+          child: AppButton(
+            title: 'Kaydet',
+            onClick: () => Navigator.pop(context, temp),
+          ),
+        ),
+      ],
+    );
+    if (result != null) {
+      setState(() => _selectedLatLng = result);
+    }
   }
 }

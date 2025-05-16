@@ -21,6 +21,12 @@ class LoginSuccess extends LoginState {
   List<Object?> get props => [user];
 }
 
+/// UI’ın yönlendirilmesini sağlayan state
+class LoginNavigate extends LoginState {
+  @override
+  List<Object?> get props => [];
+}
+
 class LoginFailure extends LoginState {
   final String message;
 
