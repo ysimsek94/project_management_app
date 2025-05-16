@@ -7,7 +7,6 @@ import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
-import 'package:project_management_app/features/task/domain/usecases/get_tasks_by_project_id_usecase.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_add_page.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -298,19 +297,6 @@ class _TaskListPageState extends State<TaskListPage> {
         ),
       ),
     );
-  }
-
-  double _calculateProgress(String status) {
-    switch (status.toLowerCase()) {
-      case 'tamamlandı':
-        return 1.0;
-      case 'bekliyor':
-        return 0.5;
-      case 'iptal':
-        return 0.0;
-      default:
-        return 0.5;
-    }
   }
 
   Color _getStatusColor(String status) {

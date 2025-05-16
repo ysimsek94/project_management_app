@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
 import 'package:project_management_app/features/project/domain/usecases/get_projects_usecase.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';

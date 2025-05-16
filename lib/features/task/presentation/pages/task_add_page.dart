@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
@@ -17,8 +16,6 @@ import 'package:project_management_app/core/utils/app_map_utils.dart';
 import 'package:project_management_app/features/task/domain/entities/task.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
-import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
-
 import '../../../../core/page/gallery_page.dart';
 import '../../../../core/page/map_interaction_page.dart';
 

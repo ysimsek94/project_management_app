@@ -5,7 +5,6 @@ import 'package:project_management_app/core/constants/app_sizes.dart';
 import 'package:project_management_app/core/utils/app_styles.dart';
 import 'package:project_management_app/core/widgets/app_text_field.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
-import '../../../../core/preferences/AppPreferences.dart';
 import '../bloc/login_cubit.dart';
 import '../bloc/login_state.dart';
 
