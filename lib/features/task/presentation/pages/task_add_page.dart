@@ -16,8 +16,10 @@ import 'package:project_management_app/core/utils/app_map_utils.dart';
 import 'package:project_management_app/features/task/domain/entities/task.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
-import '../../../../core/page/gallery_page.dart';
 import '../../../../core/page/map_interaction_page.dart';
+import '../../../../injection.dart';
+import '../../../task_photo/presentation/bloc/task_photo_cubit.dart';
+import '../../../task_photo/presentation/pages/task_gallery_page.dart';
 
 /// Görev ekleme/düzenleme sayfası.
 class TaskAddPage extends StatefulWidget {
@@ -48,6 +50,7 @@ class _TaskAddPageState extends State<TaskAddPage> {
     'yapılacak',
     'devam ediyor',
     'tamamlandı',
+    'bekliyor'
   ];
 
   @override
@@ -93,6 +96,11 @@ class _TaskAddPageState extends State<TaskAddPage> {
   /// Form geçerliyse Cubit’e ekle/güncelle gönderir
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    if (_status == null) {
+      AppAlerts.showError(context, "Lütfen görev durumu seçiniz.");
+      return;
+    }
+
     final task = Task(
       id: widget.task?.id ?? '',
       title: _titleCtrl.text.trim(),
@@ -102,11 +110,16 @@ class _TaskAddPageState extends State<TaskAddPage> {
       latitude: _selectedLatLng?.latitude,
       longitude: _selectedLatLng?.longitude,
     );
+
     if (widget.task == null) {
       context.read<TaskCubit>().addTask(task);
     } else {
       context.read<TaskCubit>().updateTask(task);
     }
+  }
+
+  bool _isTaskValid() {
+    return widget.task != null && widget.task!.id.isNotEmpty;
   }
 
   @override
@@ -177,7 +190,7 @@ class _TaskAddPageState extends State<TaskAddPage> {
     return AppTextField(
       hint: hint,
       textEditingController: controller,
-      validator: (val) => val == null || val.isEmpty ? validatorMsg : null,
+      validator: (val) => val == null || val.trim().isEmpty ? validatorMsg : null,
     );
   }
 
@@ -245,7 +258,7 @@ class _TaskAddPageState extends State<TaskAddPage> {
         AppButton(
           title: 'Galeri',
           icon: Icons.photo_library_outlined,
-          onClick: _openGallery,
+          onClick: _openGalleryPage,
         ),
         AppSizes.gapH12,
         AppButton(
@@ -260,7 +273,10 @@ class _TaskAddPageState extends State<TaskAddPage> {
           title: 'Konumu Haritada Aç',
           icon: Icons.fullscreen,
           onClick: () async {
-            // Harita sayfasına geçiş ve konum seçimi
+            if (!_isTaskValid()) {
+              AppAlerts.showError(context, "Lütfen önce görevi kaydedin.");
+              return;
+            }
             await Navigator.push<LatLng>(
               context,
               MaterialPageRoute(
@@ -291,15 +307,29 @@ class _TaskAddPageState extends State<TaskAddPage> {
   }
 
   /// Galeri sayfasını açar
-  Future<void> _openGallery() async {
-    await Navigator.push(
+  Future<void> _openGalleryPage() async {
+    if (!_isTaskValid()) {
+      AppAlerts.showError(context, "Lütfen önce görevi kaydedin.");
+      return;
+    }
+
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const GalleryPage()),
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => getIt<TaskPhotoCubit>(),
+          child: TaskGalleryPage(taskId: widget.task!.id),
+        ),
+      ),
     );
   }
-
   /// Harita seçici dialog’u açar ve sonucu alır
   Future<void> _openMapSelector() async {
+    if (!_isTaskValid()) {
+      AppAlerts.showError(context, "Lütfen önce görevi kaydedin.");
+      return;
+    }
+
     LatLng? temp = _selectedLatLng;
     final result = await AppDialog.showCustomDialog<LatLng>(
       context: context,

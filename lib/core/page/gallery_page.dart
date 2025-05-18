@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:project_management_app/core/services/photo_picker_service.dart';
+import 'package:project_management_app/core/services/photo_upload_service.dart';
+import 'package:project_management_app/injection.dart';
 import 'package:project_management_app/core/widgets/app_alerts.dart';
 import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 
@@ -16,25 +18,31 @@ class _GalleryPageState extends State<GalleryPage> {
   final List<File> _images = [];
 
   Future<void> _pickImageFromGallery() async {
-    final image = await PhotoPickerService.pickFromGallery();
+    final image = await PhotoPickerService.pickImage(fromCamera: false);
     if (image != null) {
       setState(() {
         _images.add(image);
       });
+      await _handleUpload(image);
     } else {
       AppAlerts.showWarning(context, "Fotoğraf seçilemedi veya izin verilmedi.");
     }
   }
 
   Future<void> _takePhoto() async {
-    final image = await PhotoPickerService.pickFromCamera();
+    final image = await PhotoPickerService.pickImage(fromCamera: true);
     if (image != null) {
       setState(() {
         _images.add(image);
       });
+      await _handleUpload(image);
     } else {
       AppAlerts.showWarning(context, "Kamera izni verilmedi veya işlem iptal edildi.");
     }
+  }
+
+  Future<void> _handleUpload(File image) async {
+    await getIt<PhotoUploadService>().uploadImage(image);
   }
 
   @override

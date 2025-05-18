@@ -24,6 +24,12 @@ import 'features/project/domain/repositories/project_repository.dart';
 import 'features/project/domain/usecases/get_projects_usecase.dart';
 import 'features/project/presentation/bloc/project_cubit.dart';
 import 'features/task/data/datasources/task_remote_data_source.dart';
+import 'features/task_photo/data/datasources/task_photo_remote_data_source.dart';
+import 'features/task_photo/data/datasources/task_photo_remote_data_source_impl.dart';
+import 'features/task_photo/data/repositories/task_photo_repository_impl.dart';
+import 'features/task_photo/domain/repositories/task_photo_repository.dart';
+import 'features/task_photo/domain/usecases/task_photo_usecases.dart';
+import 'features/task_photo/presentation/bloc/task_photo_cubit.dart';
 
 // Register the GetIt instance
 final getIt = GetIt.instance;
@@ -90,4 +96,29 @@ void configureDependencies() {
   getIt.registerFactory<TaskCubit>(
     () => TaskCubit(getIt<TaskUseCases>()),
   );
+
+  // ===== TaskPhoto Feature =====
+  getIt.registerLazySingleton<TaskPhotoRemoteDataSource>(
+    () => TaskPhotoRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<TaskPhotoRepository>(
+    () => TaskPhotoRepositoryImpl(getIt<TaskPhotoRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<GetTaskPhotosUseCase>(
+    () => GetTaskPhotosUseCase(getIt<TaskPhotoRepository>()),
+  );
+  getIt.registerLazySingleton<UploadTaskPhotoUseCase>(
+    () => UploadTaskPhotoUseCase(getIt<TaskPhotoRepository>()),
+  );
+  getIt.registerLazySingleton<DeleteTaskPhotoUseCase>(
+    () => DeleteTaskPhotoUseCase(getIt<TaskPhotoRepository>()),
+  );
+  getIt.registerFactory<TaskPhotoCubit>(
+    () => TaskPhotoCubit(
+      getIt<GetTaskPhotosUseCase>(),
+      getIt<UploadTaskPhotoUseCase>(),
+      getIt<DeleteTaskPhotoUseCase>(),
+    ),
+  );
+
 }

@@ -21,4 +21,8 @@ class TaskUseCases {
   Future<void> updateTask(Task task) async {
     return await repository.updateTask(task);
   }
+
+  Future<List<Task>> getLastTasks({int count = 10}) {
+    return repository.getLastTasks(count: count);
+  }
 }

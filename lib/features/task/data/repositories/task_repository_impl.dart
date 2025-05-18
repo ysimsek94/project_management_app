@@ -35,4 +35,11 @@ class TaskRepositoryImpl implements TaskRepository {
   Future<void> updateTask(Task task) {
     return remoteDataSource.updateTask(TaskModel.fromEntity(task));
   }
+
+  @override
+  Future<List<Task>> getLastTasks({int count = 10}) async {
+    final models = await remoteDataSource.getLastTasks(count: count);
+    return models.map((e) => e.toEntity()).toList();
+  }
+
 }

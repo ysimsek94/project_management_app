@@ -7,44 +7,29 @@ import 'package:permission_handler/permission_handler.dart';
 class PhotoPickerService {
   static final ImagePicker _picker = ImagePicker();
 
-  /// Kamerayı açar ve fotoğraf çeker
-  /// Android ve iOS platformlarında gerekli izinleri kontrol eder
-  static Future<File?> pickFromCamera() async {
-    if (kIsWeb) return null; // Web platformunda desteklenmez
+  /// Kameradan veya galeriden tek fotoğraf seçer
+  static Future<File?> pickImage({required bool fromCamera}) async {
+    if (kIsWeb) return null;
 
-    final permissionStatus = await Permission.camera.request();
-    if (!permissionStatus.isGranted) {
-      // Kamera izni verilmediğinde null döner
-      return null;
-    }
+    final permissionGranted = fromCamera
+        ? await _getCameraPermission()
+        : await _getGalleryPermission();
 
-    try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.camera);
-      return pickedFile != null ? File(pickedFile.path) : null;
-    } catch (e) {
-      // Hata durumunda null döner
-      return null;
-    }
-  }
-
-  /// Galeriden tek fotoğraf seçer
-  /// Android 13+ ve iOS 14+ için uygun izinleri kontrol eder
-  static Future<File?> pickFromGallery() async {
-    if (kIsWeb) return null; // Web platformunda desteklenmez
-
-    final permissionGranted = await _getGalleryPermission();
     if (!permissionGranted) return null;
 
     try {
-      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      final pickedFile = await _picker.pickImage(
+        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 75,
+      );
       return pickedFile != null ? File(pickedFile.path) : null;
     } catch (e) {
+      debugPrint('Fotoğraf seçme hatası: $e');
       return null;
     }
   }
 
   /// Galeriden birden fazla fotoğraf seçer
-  /// Android 13+ ve iOS 14+ için uygun izinleri kontrol eder
   static Future<List<File>> pickMultipleFromGallery() async {
     if (kIsWeb) return [];
 
@@ -55,18 +40,17 @@ class PhotoPickerService {
       final pickedFiles = await _picker.pickMultiImage();
       return pickedFiles.map((e) => File(e.path)).toList();
     } catch (e) {
+      debugPrint('Çoklu fotoğraf seçme hatası: $e');
       return [];
     }
   }
 
-  /// Android ve iOS için galeriden fotoğraf erişim iznini kontrol eder
-  /// Android 13+ için READ_MEDIA_IMAGES, önceki sürümler için storage izni ister
+  /// Galeri izni kontrolü (Android/iOS)
   static Future<bool> _getGalleryPermission() async {
     if (Platform.isIOS) {
       final status = await Permission.photos.request();
       return status.isGranted;
     } else if (Platform.isAndroid) {
-      // Android 13 (API 33) ve üzeri için READ_MEDIA_IMAGES izni gereklidir
       if (await _isAndroid13OrAbove()) {
         final status = await Permission.photos.request();
         return status.isGranted;
@@ -78,7 +62,13 @@ class PhotoPickerService {
     return false;
   }
 
-  /// Android sürümünü kontrol eder (13 ve üzeri için true döner)
+  /// Kamera izni kontrolü
+  static Future<bool> _getCameraPermission() async {
+    final status = await Permission.camera.request();
+    return status.isGranted;
+  }
+
+  /// Android 13 ve üzeri kontrolü
   static Future<bool> _isAndroid13OrAbove() async {
     if (!Platform.isAndroid) return false;
     try {
@@ -89,7 +79,7 @@ class PhotoPickerService {
     }
   }
 
-  /// Android SDK sürümünü alır (device_info_plus ile güncellendi)
+  /// Android SDK versiyonu al
   static Future<int?> _getAndroidSdkInt() async {
     try {
       final deviceInfo = DeviceInfoPlugin();

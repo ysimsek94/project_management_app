@@ -24,7 +24,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       "token": "mock-token-123",
       "username": "admin",
       "adSoyad": "Yusuf Şimşek",
-      "roles": ["admin", "user"],
+      "roles": ["user"],
     };
 
     return LoginResponseModel.fromJson(mockJson);

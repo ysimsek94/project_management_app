@@ -31,5 +31,16 @@ class ApiService {
     return await dio.get(path, queryParameters: queryParameters);
   }
 
-// Eğer gerekirse put, delete vs. de eklenebilir.
+  Future<Response> delete(String path, {Map<String, dynamic>? data}) async {
+    return await dio.delete(path, data: data);
+  }
+
+  Future<Response> put(String path, {Map<String, dynamic>? data}) async {
+    return await dio.put(path, data: data);
+  }
+
+  Future<Response> patch(String path, {Map<String, dynamic>? data}) async {
+    return await dio.patch(path, data: data);
+  }
+
 }

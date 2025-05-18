@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         title: 'Kurumsal Uygulama',
-        theme: AppTheme.themes[AppThemeColor.purple]!.copyWith(
+        theme: AppTheme.themes[AppThemeColor.teal]!.copyWith(
           pageTransitionsTheme: const PageTransitionsTheme(
             builders: {
               TargetPlatform.android: SlideRightToLeftPageTransitionsBuilder(),

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
-import 'package:project_management_app/core/extensions/string_extensions.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
 import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_add_page.dart';
+import '../widgets/task_list_view.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -152,123 +152,23 @@ class _TaskListPageState extends State<TaskListPage> {
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () =>
-                            _taskCubit.getTaskList(_selectedDate.yMd),
-                        child: ListView.builder(
-                          itemCount: tasks.length,
-                          itemBuilder: (context, index) {
-                            final task = tasks[index];
-                            return InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () {
-                                // Görev detay sayfasına navigasyon
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => BlocProvider.value(
-                                      value: _taskCubit,
-                                      child: TaskAddPage(task: task),
-                                    ),
-                                  ),
-                                ).then((value) {
-                                  if (value == true) {
-                                    _taskCubit.getTaskList(_selectedDate.yMd);
-                                  }
-                                });
-                              },
-                              child: Card(
-                                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 1,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Üst satır: Proje, faz ve durum
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          // Proje ve faz adları
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                "Proje Adı",
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .titleMedium
-                                                    ?.copyWith(fontWeight: FontWeight.bold),
-                                              ),
-                                           AppSizes.gapH4,
-                                              Text(
-                                                "Faz Adı",
-                                                style: Theme.of(context).textTheme.bodyMedium,
-                                              ),
-                                            ],
-                                          ),
-                                          // Durum etiketi
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: _getStatusColor(task.status)
-                                                  .withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              task.status.capitalize(),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: _getStatusColor(task.status),
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      AppSizes.gapH12,
-                                      // Görev başlığı
-                                      Text(
-                                        task.title,
-                                        style: Theme.of(context).textTheme.bodyLarge,
-                                      ),
-                                      AppSizes.gapH12,
-                                      // Tarihler satırı
-                                      Row(
-                                        children: [
-                                          Icon(Icons.calendar_today,
-                                              size: 16,
-                                              color: Theme.of(context)
-                                                  .primaryColor),
-                                          AppSizes.gapW4,
-                                          Text(
-                                            'Başlangıç: ${DateTime.now().yMd}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall,
-                                          ),
-                                          AppSizes.gapW16,
-                                          Icon(Icons.calendar_today,
-                                              size: 16,
-                                              color: Theme.of(context)
-                                                  .primaryColor),
-                                          AppSizes.gapW4,
-                                          Text(
-                                            'Bitiş: ${DateTime.now().yMd}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall,
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                        onRefresh: () => _taskCubit.getTaskList(_selectedDate.yMd),
+                        child: TaskListView(
+                          tasks: tasks,
+                          onTap: (task) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BlocProvider.value(
+                                  value: _taskCubit,
+                                  child: TaskAddPage(task: task),
                                 ),
                               ),
-                            );
+                            ).then((value) {
+                              if (value == true) {
+                                _taskCubit.getTaskList(_selectedDate.yMd);
+                              }
+                            });
                           },
                         ),
                       );

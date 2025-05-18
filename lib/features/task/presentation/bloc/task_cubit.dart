@@ -9,8 +9,6 @@ class TaskCubit extends Cubit<TaskState> {
 
   TaskCubit(this._taskUseCases) : super(TaskInitial());
 
-
-
   Future<void> deleteTask(int taskId) async {
     emit(TaskOperationInProgress());
     try {
@@ -24,7 +22,7 @@ class TaskCubit extends Cubit<TaskState> {
   Future<void> updateTask(Task task) async {
     emit(TaskOperationInProgress());
     try {
-     await _taskUseCases.updateTask(task);
+      await _taskUseCases.updateTask(task);
       emit(TaskUpdateSuccess("Görev Güncellendi."));
     } catch (e) {
       emit(TaskFailure('Görev güncellenemedi: ${e.toString()}'));
@@ -32,7 +30,6 @@ class TaskCubit extends Cubit<TaskState> {
   }
 
   Future<Task> addTask(Task task) async {
-
     emit(TaskOperationInProgress());
     try {
       final createdTask = await _taskUseCases.addTask(task);
@@ -43,14 +40,25 @@ class TaskCubit extends Cubit<TaskState> {
       rethrow;
     }
   }
+
   Future<void> getTaskList(String date) async {
     emit(TaskLoadInProgress());
     try {
       final tasks = await _taskUseCases.getTaskList(date);
-      _allTasks = tasks;                    // tam listeyi saklıyoruz
-      emit(TaskLoadSuccess(_allTasks));    // ekrana tam listeyi basıyoruz
+      _allTasks = tasks; // tam listeyi saklıyoruz
+      emit(TaskLoadSuccess(_allTasks)); // ekrana tam listeyi basıyoruz
     } catch (e) {
       emit(TaskFailure('Görevler yüklenemedi: $e'));
+    }
+  }
+
+  Future<void> fetchLastTasks() async {
+    emit(TaskLoadInProgress());
+    try {
+      final tasks = await _taskUseCases.getLastTasks(count: 10);
+      emit(TaskLoadSuccess(tasks));
+    } catch (e) {
+      emit(TaskFailure('Son görevler yüklenemedi: ${e.toString()}'));
     }
   }
 

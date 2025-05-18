@@ -14,6 +14,7 @@ import '../../../task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
+import '../../../task/presentation/widgets/last_task_list.dart';
 import '../../presentation//widgets/completed_tasks_card.dart';
 import '../../presentation//widgets/projects_performance_card.dart';
 import '../../presentation/widgets/weekly_request_task_card.dart';
@@ -35,11 +36,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
+  bool get isAdmin => context.hasRole('admin');
+
   /// Sayfa içeriği ve alt menülerin yönetimi
   @override
   Widget build(BuildContext context) {
     // Alt sekme sayfalarını ve menü öğelerini birlikte oluştur (senkronizasyon için)
-    final isAdmin = context.hasRole('admin');
     final List<Map<String, dynamic>> navConfig = [
       {
         'page': _buildHomeBody(),
@@ -60,7 +62,7 @@ class _HomePageState extends State<HomePage> {
           label: 'Görevler',
         ),
       },
-      if (isAdmin)
+
         {
           'page': BlocProvider(
             create: (_) => ProfileCubit(getIt<ProfileUseCase>()),
@@ -70,13 +72,15 @@ class _HomePageState extends State<HomePage> {
             icon: Icons.person,
             label: 'Profil',
           ),
-        },
+        }
+
     ];
 
     final List<Widget> pages =
         navConfig.map<Widget>((e) => e['page'] as Widget).toList();
-    final List<AppBottomNavBarItem> items =
-        navConfig.map<AppBottomNavBarItem>((e) => e['item'] as AppBottomNavBarItem).toList();
+    final List<AppBottomNavBarItem> items = navConfig
+        .map<AppBottomNavBarItem>((e) => e['item'] as AppBottomNavBarItem)
+        .toList();
 
     return Scaffold(
       body: pages[_currentIndex],
@@ -157,30 +161,47 @@ class _HomePageState extends State<HomePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CompletedTasksCard(
-          statusItems: [
-            StatusItemData(label: "Tamamlandı", percent: 0.73, color: Colors.green),
-            StatusItemData(label: "Bekliyor", percent: 0.18, color: Colors.orange),
-            StatusItemData(label: "İptal Edildi", percent: 0.09, color: Colors.red),
-          ],
-        ),
-        AppSizes.gapH16,
-        if (context.hasRole('admin'))
-          ProjectPerformanceCard(
-            performanceData: [
-              ProjectPerformanceData(label: 'Proj 1', percent: 80, color: Colors.blue),
-              ProjectPerformanceData(label: 'Proj 2', percent: 55, color: Colors.orange),
-              ProjectPerformanceData(label: 'Proj 3', percent: 60, color: Colors.green),
-              ProjectPerformanceData(label: 'Proj 4', percent: 45, color: Colors.blueGrey),
-              ProjectPerformanceData(label: 'Proj 5', percent: 89, color: Colors.redAccent),
-              ProjectPerformanceData(label: 'Proj 6', percent: 96, color: Colors.teal),
+        if (context.hasRole('user'))
+          CompletedTasksCard(
+            statusItems: [
+              StatusItemData(
+                  label: "Tamamlandı", percent: 0.73, color: Colors.green),
+              StatusItemData(
+                  label: "Bekliyor", percent: 0.18, color: Colors.orange),
+              StatusItemData(
+                  label: "İptal Edildi", percent: 0.09, color: Colors.red),
             ],
           ),
         AppSizes.gapH16,
+        if (isAdmin)
+          ProjectPerformanceCard(
+            performanceData: [
+              ProjectPerformanceData(
+                  label: 'Proj 1', percent: 80, color: Colors.blue),
+              ProjectPerformanceData(
+                  label: 'Proj 2', percent: 55, color: Colors.orange),
+              ProjectPerformanceData(
+                  label: 'Proj 3', percent: 60, color: Colors.green),
+              ProjectPerformanceData(
+                  label: 'Proj 4', percent: 45, color: Colors.blueGrey),
+              ProjectPerformanceData(
+                  label: 'Proj 5', percent: 89, color: Colors.redAccent),
+              ProjectPerformanceData(
+                  label: 'Proj 6', percent: 96, color: Colors.teal),
+            ],
+          ),
+        AppSizes.gapH16,
+        if (isAdmin)
         WeeklyRequestChartCard(
           weeklyData: const [8, 10, 14, 15, 13, 10, 9],
           labels: const ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
         ),
+
+        BlocProvider(
+          create: (_) => TaskCubit(getIt<TaskUseCases>())..fetchLastTasks(),
+          child: const LastTasksList(),
+        ),
+
       ],
     );
   }

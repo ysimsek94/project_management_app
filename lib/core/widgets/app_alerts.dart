@@ -52,4 +52,34 @@ class AppAlerts {
         ),
       );
   }
+
+  static Future<bool> showConfirmationDialog(
+    BuildContext context, {
+    String title = 'Onay',
+    String? description,
+    String confirmText = 'Evet',
+    String cancelText = 'Hayır',
+    bool barrierDismissible = true,
+  }) async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: barrierDismissible,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: description != null ? Text(description) : null,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(cancelText),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(confirmText),
+            ),
+          ],
+        );
+      },
+    ).then((value) => value ?? false);
+  }
 }

@@ -7,4 +7,5 @@ abstract class TaskRemoteDataSource {
   Future<List<TaskModel>> getTaskList(String tarih);
   Future<void> deleteTask(int taskId);
   Future<void> updateTask(TaskModel task);
+  Future<List<TaskModel>> getLastTasks({int count = 10});
 }
