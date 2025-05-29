@@ -48,6 +48,12 @@
 	<string>Bu uygulama galeride fotoğraf kaydetmek istiyor.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Bu uygulama harita özelliklerini kullanmak için konumunuza ihtiyaç duyar.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Bu uygulama arka planda da konum bilgilerinizi kullanır.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

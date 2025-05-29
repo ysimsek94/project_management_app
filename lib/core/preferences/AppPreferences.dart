@@ -15,12 +15,38 @@ class AppPreferences {
 
   static String? get token => _prefs?.getString('token');
 
+  /// Set setKullaniciId
+  static Future<void> setKullaniciId(int kullaniciId) async {
+    await _prefs?.setInt('kullaniciId', kullaniciId);
+  }
+
+  static int? get kullaniciId => _prefs?.getInt('kullaniciId');
+
   /// Set username
   static Future<void> setUsername(String username) async {
     await _prefs?.setString('username', username);
   }
 
   static String? get username => _prefs?.getString('username');
+  /// Set TcKimlikNo
+  static Future<void> setTcKimlikNo(String tcKimlikNo) async {
+    await _prefs?.setString('tcKimlikNo', tcKimlikNo);
+  }
+
+  static String? get tcKimlikNo => _prefs?.getString('tcKimlikNo');
+
+  /// Set password
+  static Future<void> setPassword(String password) async {
+    await _prefs?.setString('password', password);
+  }
+
+  static String? get password => _prefs?.getString('password');
+
+  /// Remove saved username and password
+  static Future<void> removeCredentials() async {
+    await _prefs?.remove('tcKimlikNo');
+    await _prefs?.remove('password');
+  }
 
   /// Set adSoyad
   static Future<void> setAdSoyad(String adSoyad) async {

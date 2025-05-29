@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_management_app/core/constants/app_sizes.dart';
 
 class StatusItemData {
   final String label;
@@ -22,74 +23,66 @@ class CompletedTasksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Görevlerim',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: statusItems
-                  .map((item) => _StatusItem(
-                        label: item.label,
-                        percent: item.percent,
-                        color: item.color,
-                      ))
-                  .toList(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusItem extends StatelessWidget {
-  final String label;
-  final double percent;
-  final Color color;
-
-  const _StatusItem({
-    Key? key,
-    required this.label,
-    required this.percent,
-    required this.color,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          height: 48,
-          width: 48,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              CircularProgressIndicator(
-                value: percent,
-                color: color,
-                backgroundColor: color.withOpacity(0.2),
-                strokeWidth: 6,
-              ),
-              Center(
-                child: Text(
-                  '${(percent * 100).round()}%',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(label, style: Theme.of(context).textTheme.bodyMedium),
-      ],
+        ],
+      ),
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Görevlerim',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 24),
+          // Progress list design
+          Column(
+            children: statusItems.map((item) {
+              final count = (item.percent * 100).round();
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: Text(
+                        '${item.label}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                   AppSizes.gapW12,
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: item.percent,
+                          minHeight: 12,
+                          color: item.color,
+                          backgroundColor: item.color.withOpacity(0.2),
+                        ),
+                      ),
+                    ),
+                    AppSizes.gapW4,
+                    Text(
+                      '${(item.percent * 100).round()}%',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }

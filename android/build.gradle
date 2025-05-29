@@ -1,3 +1,31 @@
+buildscript {
+    ext {
+        kotlin_version = '1.8.0'  // or your project's Kotlin version
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Android Gradle Plugin sürümü
+        classpath 'com.android.tools.build:gradle:8.6.1'
+        // Kotlin Gradle Plugin
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+ext {
+    compileSdkVersion = 35
+    minSdkVersion     = 24
+    targetSdkVersion  = 35
+
+    // Geolocator Android plugin'in de referans alabildiği flutter ext
+    flutter = [
+            compileSdkVersion: 35,
+            minSdkVersion    : 24,
+            targetSdkVersion : 35
+    ]
+}
 allprojects {
     repositories {
         google()

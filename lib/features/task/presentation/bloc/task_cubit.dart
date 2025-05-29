@@ -1,25 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_management_app/core/preferences/AppPreferences.dart';
+import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
+import 'package:project_management_app/features/task/data/models/task_request_model.dart';
 import '../../domain/usecases/task_usecases.dart';
-import '../../domain/entities/task.dart';
 import 'task_state.dart';
+import '../../data/models/task_list_request_model.dart';
 
 class TaskCubit extends Cubit<TaskState> {
   final TaskUseCases _taskUseCases;
-  List<Task> _allTasks = [];
+  List<TaskListItemModel> _allTasks = [];
 
   TaskCubit(this._taskUseCases) : super(TaskInitial());
 
-  Future<void> deleteTask(int taskId) async {
-    emit(TaskOperationInProgress());
-    try {
-      await _taskUseCases.deleteTask(taskId);
-      emit(TaskDeleteSuccess(taskId));
-    } catch (e) {
-      emit(TaskFailure('Görev silinemedi: ${e.toString()}'));
-    }
-  }
-
-  Future<void> updateTask(Task task) async {
+  Future<void> updateTask(TaskRequestModel task) async {
     emit(TaskOperationInProgress());
     try {
       await _taskUseCases.updateTask(task);
@@ -29,22 +22,29 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  Future<Task> addTask(Task task) async {
-    emit(TaskOperationInProgress());
-    try {
-      final createdTask = await _taskUseCases.addTask(task);
-      emit(TaskCreateSuccess(createdTask));
-      return createdTask;
-    } catch (e) {
-      emit(TaskFailure('Görev eklenemedi: ${e.toString()}'));
-      rethrow;
-    }
-  }
+  // Future<Task> addTask(Task task) async {
+  //   emit(TaskOperationInProgress());
+  //   try {
+  //     final createdTask = await _taskUseCases.addTask(task);
+  //     emit(TaskCreateSuccess(createdTask));
+  //     return createdTask;
+  //   } catch (e) {
+  //     emit(TaskFailure('Görev eklenemedi: ${e.toString()}'));
+  //     rethrow;
+  //   }
+  // }
 
   Future<void> getTaskList(String date) async {
     emit(TaskLoadInProgress());
     try {
-      final tasks = await _taskUseCases.getTaskList(date);
+      final request = TaskListRequestModel(
+          gorevId: 0,
+          kullaniciId: AppPreferences.kullaniciId ?? 0,
+          durumId: 0,
+          baslangicTarihi: "2025-01-01T00:00:00",
+          baslangicTarihi1: "");
+
+      var tasks = await _taskUseCases.getTaskList(request);
       _allTasks = tasks; // tam listeyi saklıyoruz
       emit(TaskLoadSuccess(_allTasks)); // ekrana tam listeyi basıyoruz
     } catch (e) {
@@ -52,10 +52,11 @@ class TaskCubit extends Cubit<TaskState> {
     }
   }
 
-  Future<void> fetchLastTasks() async {
+  Future<void> fetchLastTasks(TaskListRequestModel taskListRequestModel) async {
     emit(TaskLoadInProgress());
     try {
-      final tasks = await _taskUseCases.getLastTasks(count: 10);
+      final tasks =
+          await _taskUseCases.getLastTasks(taskListRequestModel, count: 10);
       emit(TaskLoadSuccess(tasks));
     } catch (e) {
       emit(TaskFailure('Son görevler yüklenemedi: ${e.toString()}'));
@@ -65,7 +66,8 @@ class TaskCubit extends Cubit<TaskState> {
   void search(String query) {
     // Küçük/büyük harf duyarsız filtre
     final filtered = _allTasks
-        .where((t) => t.title.toLowerCase().contains(query.toLowerCase()))
+        .where(
+            (t) => (t.projeFazGorev.gorev ?? '').toLowerCase().contains(query.toLowerCase()))
         .toList();
     emit(TaskLoadSuccess(filtered));
   }

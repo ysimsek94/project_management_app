@@ -1,12 +1,16 @@
-import '../entities/task_photo.dart';
+import '../../data/models/task_photo_model.dart';
 
 abstract class TaskPhotoRepository {
-  /// Bir göreve ait tüm fotoğrafları getirir.
-  Future<List<TaskPhoto>> getPhotos(String taskId);
+  /// Belirtilen faz ve görev için tüm fotoğrafları getirir. Görsellerin yüklenip yüklenmeyeceği loadImage parametresi ile kontrol edilir.
+  Future<List<TaskPhotoModel>> getPhotos({
+    required int fazId,
+    required int gorevId,
+    required bool loadImage,
+  });
 
   /// Yeni bir fotoğraf yükler ve sunucunun döndürdüğü TaskPhoto'u geri verir.
-  Future<TaskPhoto> uploadPhoto(String taskId, String base64Image);
+  Future<TaskPhotoModel> uploadPhoto(TaskPhotoModel photo);
 
   /// Belirtilen fotoğrafı siler.
-  Future<void> deletePhoto(String photoId);
+  Future<void> deletePhoto({required int id});
 }

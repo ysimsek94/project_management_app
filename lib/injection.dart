@@ -9,6 +9,12 @@ import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/data/datasources/auth_remote_data_source_impl.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/home/data/datasources/home_remote_data_source.dart';
+import 'features/home/data/datasources/home_remote_data_source_impl.dart';
+import 'features/home/data/repositories/home_repository_impl.dart';
+import 'features/home/domain/repositories/home_repository.dart';
+import 'features/home/domain/usecases/home_usecases.dart';
+import 'features/home/presentation/cubit/home_cubit.dart';
 import 'features/profile/domain/usecases/profile_usecases.dart';
 import 'package:project_management_app/features/auth/domain/usecases/login_usecase.dart';
 import 'package:project_management_app/features/auth/presentation/bloc/login_cubit.dart';
@@ -41,7 +47,7 @@ void configureDependencies() {
   );
   // Core network and API services
   getIt.registerLazySingleton<ApiService>(
-    () => ApiService(getIt<Dio>()),
+    () => ApiService(getIt<Dio>(),baseUrl: "http://10.100.8.60:8051/api/"),
   );
 
   // ===== Profile Feature =====
@@ -120,5 +126,20 @@ void configureDependencies() {
       getIt<DeleteTaskPhotoUseCase>(),
     ),
   );
+
+  // ===== Home Feature =====
+  getIt.registerLazySingleton<HomeRemoteDataSource>(
+        () => HomeRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<HomeRepository>(
+        () => HomeRepositoryImpl(getIt<HomeRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<HomeUseCases>(
+        () => HomeUseCases(getIt<HomeRepository>()),
+  );
+  getIt.registerFactory<HomeCubit>(
+        () => HomeCubit(getIt<HomeUseCases>()),
+  );
+
 
 }

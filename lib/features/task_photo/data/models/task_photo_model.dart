@@ -1,22 +1,42 @@
 import 'package:json_annotation/json_annotation.dart';
-import '../../domain/entities/task_photo.dart';
 
 part 'task_photo_model.g.dart';
 
 /// JSON-serializable model for TaskPhoto entity
 @JsonSerializable()
 class TaskPhotoModel {
-  final String id;
-  final String taskId;
-  @JsonKey(name: 'base64Image')
-  final String base64Image;
-  final String createdAt; // ISO 8601 formatted string
+  @JsonKey(defaultValue: '')
+  final String islemTarihi;
+
+  final String? kayitEden;
+  final int id;
+  final int fazId;
+  final int gorevId;
+  final String? aciklama;
+
+  @JsonKey(defaultValue: '')
+  final String docName;
+
+  @JsonKey(defaultValue: '')
+  final String docBinary;
+
+  @JsonKey(defaultValue: '')
+  final String thumbnailBinary;
+
+  @JsonKey(defaultValue: '')
+  final String uzanti;
 
   TaskPhotoModel({
+    required this.islemTarihi,
+    this.kayitEden,
     required this.id,
-    required this.taskId,
-    required this.base64Image,
-    required this.createdAt,
+    required this.fazId,
+    required this.gorevId,
+    this.aciklama,
+    required this.docName,
+    required this.docBinary,
+    required this.thumbnailBinary,
+    required this.uzanti,
   });
 
   /// Deserialize from JSON
@@ -26,23 +46,29 @@ class TaskPhotoModel {
   /// Serialize to JSON
   Map<String, dynamic> toJson() => _$TaskPhotoModelToJson(this);
 
-  /// Convert this model to domain entity
-  TaskPhoto toEntity() {
-    return TaskPhoto(
-      id: id,
-      taskId: taskId,
-      base64Image: base64Image,
-      createdAt: DateTime.parse(createdAt),
-    );
-  }
-
-  /// Create a model from domain entity
-  factory TaskPhotoModel.fromEntity(TaskPhoto photo) {
+  TaskPhotoModel copyWith({
+    String? islemTarihi,
+    String? kayitEden,
+    int? id,
+    int? fazId,
+    int? gorevId,
+    String? aciklama,
+    String? docName,
+    String? docBinary,
+    String? thumbnailBinary,
+    String? uzanti,
+  }) {
     return TaskPhotoModel(
-      id: photo.id,
-      taskId: photo.taskId,
-      base64Image: photo.base64Image,
-      createdAt: photo.createdAt.toIso8601String(),
+      islemTarihi: islemTarihi ?? this.islemTarihi,
+      kayitEden: kayitEden ?? this.kayitEden,
+      id: id ?? this.id,
+      fazId: fazId ?? this.fazId,
+      gorevId: gorevId ?? this.gorevId,
+      aciklama: aciklama ?? this.aciklama,
+      docName: docName ?? this.docName,
+      docBinary: docBinary ?? this.docBinary,
+      thumbnailBinary: thumbnailBinary ?? this.thumbnailBinary,
+      uzanti: uzanti ?? this.uzanti,
     );
   }
 }

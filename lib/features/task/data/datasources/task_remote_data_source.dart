@@ -1,11 +1,10 @@
-import '../models/task_model.dart';
+import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
+import 'package:project_management_app/features/task/data/models/task_list_request_model.dart';
+
+import '../models/task_request_model.dart';
 
 abstract class TaskRemoteDataSource {
-  Future<List<TaskModel>> getTasksByProjectId(String projectId);
-  Future<TaskModel> getTaskById(int taskId);
-  Future<TaskModel> addTask(TaskModel task);
-  Future<List<TaskModel>> getTaskList(String tarih);
-  Future<void> deleteTask(int taskId);
-  Future<void> updateTask(TaskModel task);
-  Future<List<TaskModel>> getLastTasks({int count = 10});
+  Future<List<TaskListItemModel>> getTaskList(TaskListRequestModel taskListRequestModel);
+  Future<void> updateTask(TaskRequestModel task);
+  Future<List<TaskListItemModel>> getLastTasks(TaskListRequestModel taskListRequestModel ,{int count = 10});
 }

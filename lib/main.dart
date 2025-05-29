@@ -36,7 +36,6 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (_, __) => MaterialApp(
-
         locale: const Locale('tr'),
         supportedLocales: const [Locale('tr')],
         localizationsDelegates: const [
@@ -46,6 +45,7 @@ class MyApp extends StatelessWidget {
         ],
         title: 'Kurumsal Uygulama',
         theme: AppTheme.themes[AppThemeColor.teal]!.copyWith(
+
           pageTransitionsTheme: const PageTransitionsTheme(
             builders: {
               TargetPlatform.android: SlideRightToLeftPageTransitionsBuilder(),

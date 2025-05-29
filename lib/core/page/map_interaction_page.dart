@@ -1,9 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
-import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
+import '../widgets/app_custom_app_bar.dart';
 import '../widgets/app_map_selector.dart';
 
 /// Bu sayfa, kullanıcıya etkileşimli bir harita göstererek belirli bir modda
@@ -55,7 +54,11 @@ class _MapInteractionPageState extends State<MapInteractionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: widget.title),
+      appBar: CustomAppBar(
+        title: widget.title,
+        showBackButton: true,
+        onBack: () => Navigator.of(context).pop<LatLng?>(null),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -69,6 +72,7 @@ class _MapInteractionPageState extends State<MapInteractionPage> {
                   initialPoints: widget.initialPoints,
                   mode: widget.mode,
                   onPointsChanged: _onPointsChanged,
+                  enableSearch: true,
                 ),
               ),
             ),

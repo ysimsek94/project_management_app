@@ -1,77 +1,59 @@
+import 'dart:convert';
+
 import 'package:project_management_app/core/network/api_service.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/base_remote_data_source.dart';
 import '../models/task_photo_model.dart';
 import 'task_photo_remote_data_source.dart';
 
-class TaskPhotoRemoteDataSourceImpl implements TaskPhotoRemoteDataSource {
-  final ApiService api;
-  TaskPhotoRemoteDataSourceImpl(this.api);
+class TaskPhotoRemoteDataSourceImpl extends BaseRemoteDataSource implements TaskPhotoRemoteDataSource {
+  TaskPhotoRemoteDataSourceImpl(ApiService apiService) : super(apiService);
 
   @override
-  Future<List<TaskPhotoModel>> getPhotos(String taskId) async {
-    // Original API call:
-    // final response = await api.get('/tasks/$taskId/photos');
-    // if (response.statusCode == 200) {
-    //   final data = response.data as List;
-    //   return data.map((e) => TaskPhotoModel.fromJson(e)).toList();
-    // } else {
-    //   throw Exception('Error fetching photos: ${response.statusCode}');
-    // }
-    // Mock network delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    // Mock JSON data
-    final String sampleBase64Png =
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMBAAN9HtZcAAAAAElFTkSuQmCC';
-    final List<Map<String, dynamic>> mockJsonList = [
-      {
-        'id': '1',
-        'taskId': taskId,
-        'base64Image': sampleBase64Png,
-        'createdAt': DateTime.now().toIso8601String(),
+  Future<List<TaskPhotoModel>> getPhotos({required int fazId, required int gorevId, required bool loadImage}) async {
+    final path = ApiEndpoints.getTaskImages(fazId, gorevId, loadImage);
+    var result=getList<TaskPhotoModel>(
+      path,
+          (json) => TaskPhotoModel.fromJson(json),
+      customMsgs: {
+        400: 'Hatalı image sorgusu.',
+        404: 'Fotoğraflar bulunamadı.',
+        500: 'Sunucu hatası. Fotoğraflar alınamadı.',
       },
-      {
-        'id': '2',
-        'taskId': taskId,
-        'base64Image': sampleBase64Png,
-        'createdAt': DateTime.now().toIso8601String(),
-      },
-    ];
-    return mockJsonList.map((json) => TaskPhotoModel.fromJson(json)).toList();
+    );
+    return result;
   }
 
   @override
-  Future<TaskPhotoModel> uploadPhoto(String taskId, String base64Image) async {
-    // Original API call:
-    // final response = await api.post(
-    //   '/tasks/$taskId/photos',
-    //   data: {'image': base64Image},
-    // );
-    // if (response.statusCode == 200) {
-    //   return TaskPhotoModel.fromJson(response.data);
-    // } else {
-    //   throw Exception('Error uploading photo: ${response.statusCode}');
-    // }
-    // Mock network delay
-    await Future.delayed(const Duration(milliseconds: 300));
-    // Mock JSON response for uploaded photo
-    final Map<String, dynamic> mockJson = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'taskId': taskId,
-      'base64Image': base64Image,
-      'createdAt': DateTime.now().toIso8601String(),
-    };
-    return TaskPhotoModel.fromJson(mockJson);
+  Future<TaskPhotoModel> uploadPhoto(TaskPhotoModel photo) async {
+    print('TASK IMAGE : ${jsonEncode(photo.toJson())}');
+
+    final response = await api.post(ApiEndpoints.addTaskImage, data: photo.toJson());
+    final parsed = api.handleResponse<Map<String, dynamic>>(
+      response,
+      (json) => json as Map<String, dynamic>,
+      customMessages: {
+        400: 'Fotoğraf yükleme hatalı.',
+        404: 'Fotoğraf kaynağı bulunamadı.',
+        500: 'Sunucu hatası. Fotoğraf yüklenemedi.',
+      },
+    );
+
+    final uploadedId = parsed['id'];
+    return photo.copyWith(id: uploadedId is int ? uploadedId : 0);
   }
 
   @override
-  Future<void> deletePhoto(String photoId) async {
-    // Original API call:
-    // final response = await api.delete('/photos/$photoId');
-    // if (response.statusCode != 200) {
-    //   throw Exception('Error deleting photo: ${response.statusCode}');
-    // }
-    // Mock network delay for delete
-    await Future.delayed(const Duration(milliseconds: 300));
-    // Always succeed
-    return;
+  Future<void> deletePhoto({required int id}) async {
+    final response = await api.delete(ApiEndpoints.deleteTaskImage(id));
+    api.handleResponse(
+      response,
+      (_) => null,
+      customMessages: {
+        400: 'Silme işlemi hatalı.',
+        404: 'Fotoğraf bulunamadı.',
+        500: 'Fotoğraf silinemedi.',
+      },
+    );
   }
 }

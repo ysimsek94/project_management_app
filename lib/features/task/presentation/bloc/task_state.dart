@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/task.dart';
+import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
+import 'package:project_management_app/features/task/data/models/task_request_model.dart';
 
 abstract class TaskState extends Equatable {
   const TaskState();
@@ -15,7 +16,7 @@ class TaskLoadInProgress extends TaskState {}
 
 /// Listeleme başarılı olduğunda
 class TaskLoadSuccess extends TaskState {
-  final List<Task> tasks;
+  final List<TaskListItemModel> tasks;
   const TaskLoadSuccess(this.tasks);
 
   @override
@@ -27,7 +28,7 @@ class TaskOperationInProgress extends TaskState {}
 
 /// Yeni görev oluşturma başarılı
 class TaskCreateSuccess extends TaskState {
-  final Task task;
+  final TaskRequestModel task;
   const TaskCreateSuccess(this.task);
 
   @override

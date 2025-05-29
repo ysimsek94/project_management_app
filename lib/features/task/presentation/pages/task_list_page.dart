@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
+import 'package:project_management_app/core/preferences/AppPreferences.dart';
 import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_add_page.dart';
+import '../../data/models/task_list_item_model.dart';
+import '../../data/models/task_request_model.dart';
 import '../widgets/task_list_view.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -54,7 +57,7 @@ class _TaskListPageState extends State<TaskListPage> {
           showBackButton: false,
         ),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -114,7 +117,7 @@ class _TaskListPageState extends State<TaskListPage> {
                       const Text("Tüm Görevler - ",
                           style: TextStyle(fontSize: 14)),
                       Text(
-                        _selectedDate.yMd,
+                        _selectedDate.dMy,
                         style: TextStyle(
                             fontSize: 14,
                             color: Theme.of(context).primaryColor),
@@ -152,16 +155,17 @@ class _TaskListPageState extends State<TaskListPage> {
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () => _taskCubit.getTaskList(_selectedDate.yMd),
+                        onRefresh: () =>
+                            _taskCubit.getTaskList(_selectedDate.yMd),
                         child: TaskListView(
                           tasks: tasks,
-                          onTap: (task) {
+                          onTap: (taskItem) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => BlocProvider.value(
                                   value: _taskCubit,
-                                  child: TaskAddPage(task: task),
+                                  child: TaskAddPage(task: taskItem),
                                 ),
                               ),
                             ).then((value) {
@@ -181,7 +185,7 @@ class _TaskListPageState extends State<TaskListPage> {
                             AppSizes.gapH8,
                             ElevatedButton(
                               onPressed: () =>
-                                  _taskCubit.getTaskList(_selectedDate.yMd),
+                                  _taskCubit.getTaskList(_selectedDate.dMy),
                               child: const Text("Tekrar Dene"),
                             ),
                           ],
@@ -197,18 +201,5 @@ class _TaskListPageState extends State<TaskListPage> {
         ),
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'tamamlandı':
-        return Colors.green;
-      case 'devam ediyor':
-        return Colors.orange;
-      case 'yapılacak':
-        return Colors.blue;
-      default:
-        return Colors.redAccent;
-    }
   }
 }

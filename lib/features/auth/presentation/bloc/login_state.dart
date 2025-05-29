@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/user.dart';
+import 'package:project_management_app/features/auth/data/models/login_response_model.dart';
 
 abstract class LoginState extends Equatable {
   const LoginState();
@@ -13,12 +13,12 @@ class LoginInitial extends LoginState {}
 class LoginLoading extends LoginState {}
 
 class LoginSuccess extends LoginState {
-  final User user;
+  final LoginResponseModel model;
 
-  const LoginSuccess(this.user);
+  const LoginSuccess(this.model);
 
   @override
-  List<Object?> get props => [user];
+  List<Object?> get props => [model];
 }
 
 /// UI’ın yönlendirilmesini sağlayan state

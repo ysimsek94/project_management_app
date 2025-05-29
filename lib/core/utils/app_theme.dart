@@ -18,35 +18,41 @@ enum AppThemeColor {
 
 class AppTheme {
   static final Map<AppThemeColor, ThemeData> themes = {
-    AppThemeColor.purple: ThemeData(
+    AppThemeColor.teal: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
       scaffoldBackgroundColor: AppColors.bgWhite,
       fontFamily: "Montserrat",
-      primaryColor: Colors.deepPurple,
+    ),
+    AppThemeColor.purple: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
+      scaffoldBackgroundColor: AppColors.bgWhite,
+      fontFamily: "Montserrat",
     ),
     AppThemeColor.green: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
       scaffoldBackgroundColor: AppColors.bgWhite,
       fontFamily: "Montserrat",
-      primaryColor: Colors.green,
     ),
     AppThemeColor.orange: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
       scaffoldBackgroundColor: AppColors.bgWhite,
       fontFamily: "Montserrat",
-      primaryColor: Colors.orange,
     ),
     AppThemeColor.red: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
       scaffoldBackgroundColor: AppColors.bgWhite,
       fontFamily: "Montserrat",
-      primaryColor: Colors.red,
-    ),
-    AppThemeColor.teal: ThemeData(
-      scaffoldBackgroundColor: AppColors.bgWhite,
-      fontFamily: "Montserrat",
-      primaryColor: Colors.teal,
     ),
     AppThemeColor.pink: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
       scaffoldBackgroundColor: AppColors.bgWhite,
       fontFamily: "Montserrat",
-      primaryColor: Colors.pink,
     ),
   };
 }

@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/constants/app_assets.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
 import 'package:project_management_app/core/utils/app_styles.dart';
+import 'package:project_management_app/core/widgets/app_alerts.dart';
 import 'package:project_management_app/core/widgets/app_text_field.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
+import '../../../../core/preferences/AppPreferences.dart';
 import '../bloc/login_cubit.dart';
 import '../bloc/login_state.dart';
 
@@ -23,32 +25,44 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers for input fields
-  late final TextEditingController _emailController;
+  late final TextEditingController _tcController;
   late final TextEditingController _passwordController;
 
   // Controls whether the password is obscured
   bool _obscurePassword = true;
+  bool _rememberMe = false;
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController();
+    _tcController = TextEditingController();
     _passwordController = TextEditingController();
+
+    // Load saved credentials
+    final savedTc = AppPreferences.tcKimlikNo ?? '';
+    final savedPassword = AppPreferences.password ?? '';
+    if (savedTc.isNotEmpty && savedPassword.isNotEmpty) {
+      _tcController.text = savedTc;
+      _passwordController.text = savedPassword;
+      _rememberMe = true;
+    }
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _tcController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  /// E-posta alanı doğrulama
-  String? _validateEmail(String? value) {
+  /// TC Kimlik No alanı doğrulama
+  String? _validateTcKimlikNo(String? value) {
     if (value == null || value.isEmpty) {
-      return 'E-posta boş bırakılamaz';
+      return 'TC Kimlik No boş bırakılamaz';
     }
-
+    if (value.length != 11) {
+      return 'TC Kimlik No 11 haneli olmalıdır';
+    }
     return null;
   }
 
@@ -66,9 +80,9 @@ class _LoginPageState extends State<LoginPage> {
   /// Validate inputs and trigger login event
   void _onLoginPressed() {
     if (_formKey.currentState?.validate() != true) return;
-    // Trim email and use exact password text
+    // Trim TC Kimlik No and use exact password text
     context.read<LoginCubit>().login(
-          _emailController.text.trim(),
+          _tcController.text.trim(),
           _passwordController.text,
         );
   }
@@ -122,14 +136,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     AppSizes.gapH32,
 
-                    // E-posta alanı ve doğrulama
-                    AppTextField(
-                      hint: 'E-mail',
-                      textEditingController: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                    // TC Kimlik No alanı ve doğrulama
+                   AppTextField(
+                      hint: 'TC Kimlik No',
+                      textEditingController: _tcController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 11,
                       borderRadius: 12,
-                      // E-posta alanı için doğrulama metodu
-                      validator: _validateEmail,
+                      validator: _validateTcKimlikNo,
+
                     ),
                     AppSizes.gapH16,
 
@@ -152,20 +167,25 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     AppSizes.gapH12,
 
-                    // Şifremi Unuttum bağlantısı
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          // TODO: Handle forgot password
-                        },
-                        child: Text(
-                          'Şifremi Unuttum?',
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                          ),
+                    // Removed the "Şifremi Unuttum?" link and the following gap
+
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Beni Hatırla',
+                          style: AppTypography.medium14(),
+                        ),
+                      ],
                     ),
                     AppSizes.gapH16,
 
@@ -173,6 +193,12 @@ class _LoginPageState extends State<LoginPage> {
                     BlocConsumer<LoginCubit, LoginState>(
                       listener: (context, state) {
                         if (state is LoginNavigate) {
+                          if (_rememberMe) {
+                            AppPreferences.setTcKimlikNo(_tcController.text.trim());
+                            AppPreferences.setPassword(_passwordController.text);
+                          } else {
+                            AppPreferences.removeCredentials();
+                          }
                           // Başarılı login sonrası ana sayfaya yönlendir
                           Navigator.pushNamedAndRemoveUntil(
                             context,
@@ -181,9 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                           );
                         } else if (state is LoginFailure) {
                           // Hata mesajını göster
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(state.message)),
-                          );
+                          AppAlerts.showError(context, state.message);
                         }
                       },
                       builder: (context, state) {

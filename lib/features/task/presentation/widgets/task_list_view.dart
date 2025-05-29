@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
 import 'package:project_management_app/features/task/presentation/widgets/task_card.dart';
 
 import '../../../../core/constants/app_sizes.dart';
-import '../../domain/entities/task.dart';
 
 class TaskListView extends StatelessWidget {
-  final List<Task> tasks;
-  final void Function(Task)? onTap;
+  final List<TaskListItemModel> tasks;
+  final void Function(TaskListItemModel)? onTap;
 
   const TaskListView({required this.tasks, this.onTap});
 

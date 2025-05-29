@@ -1,7 +1,8 @@
-import '../../domain/entities/task.dart';
+import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
+import 'package:project_management_app/features/task/data/models/task_request_model.dart';
 import '../../domain/repositories/task_repository.dart';
 import '../datasources/task_remote_data_source.dart';
-import '../models/task_model.dart';
+import '../models/task_list_request_model.dart';
 
 class TaskRepositoryImpl implements TaskRepository {
   final TaskRemoteDataSource remoteDataSource;
@@ -9,37 +10,20 @@ class TaskRepositoryImpl implements TaskRepository {
   TaskRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<List<Task>> getTasksByProjectId(String projectId) async {
-    final models = await remoteDataSource.getTasksByProjectId(projectId);
-    return models.map((e) => e.toEntity()).toList();
+  Future<List<TaskListItemModel>> getTaskList(TaskListRequestModel request) async {
+    var taskList = await remoteDataSource.getTaskList(request);
+    return taskList;
   }
 
   @override
-  Future<Task> addTask(Task task) async {
-    final taskModel = await remoteDataSource.addTask(TaskModel.fromEntity(task));
-    return taskModel.toEntity();
+  Future<void> updateTask(TaskRequestModel task) {
+    return remoteDataSource.updateTask(task);
   }
 
   @override
-  Future<List<Task>> getTaskList(String tarih) async {
-    final models = await remoteDataSource.getTaskList(tarih);
-    return models.map((e) => e.toEntity()).toList();
-  }
-
-  @override
-  Future<void> deleteTask(int taskId) {
-    return remoteDataSource.deleteTask(taskId);
-  }
-
-  @override
-  Future<void> updateTask(Task task) {
-    return remoteDataSource.updateTask(TaskModel.fromEntity(task));
-  }
-
-  @override
-  Future<List<Task>> getLastTasks({int count = 10}) async {
-    final models = await remoteDataSource.getLastTasks(count: count);
-    return models.map((e) => e.toEntity()).toList();
+  Future<List<TaskListItemModel>> getLastTasks(TaskListRequestModel taskListRequestModel,{int count = 10}) async {
+    var taskList = await remoteDataSource.getLastTasks(taskListRequestModel, count: count);
+    return taskList;
   }
 
 }

@@ -1,3 +1,5 @@
+import 'package:project_management_app/features/auth/data/models/login_response_model.dart';
+
 import '../entities/user.dart';
 import '../repositories/auth_repository.dart';
 
@@ -6,7 +8,7 @@ class LoginUseCase {
 
   LoginUseCase(this.repository);
 
-  Future<User> call({required String email, required String password}) async {
-    return await repository.login(email: email, password: password);
+  Future<LoginResponseModel> call({required String tcKimlikNo, required String password}) async {
+    return await repository.login(tcKimlikNo: tcKimlikNo, password: password);
   }
 }

@@ -1,16 +1,16 @@
 /// Domain use cases for TaskPhoto feature
 
+import '../../data/models/task_photo_model.dart';
 import '../repositories/task_photo_repository.dart';
-import '../entities/task_photo.dart';
 
 /// UseCase: Retrieve all photos for a given task
 class GetTaskPhotosUseCase {
   final TaskPhotoRepository repository;
   GetTaskPhotosUseCase(this.repository);
 
-  /// Returns a list of TaskPhoto for the specified taskId
-  Future<List<TaskPhoto>> call(String taskId) {
-    return repository.getPhotos(taskId);
+  /// Returns a list of TaskPhoto for the specified fazId, gorevId, and loadImage
+  Future<List<TaskPhotoModel>> call(int fazId, int gorevId, bool loadImage) {
+    return repository.getPhotos(fazId: fazId, gorevId: gorevId,loadImage:  loadImage);
   }
 }
 
@@ -19,10 +19,10 @@ class UploadTaskPhotoUseCase {
   final TaskPhotoRepository repository;
   UploadTaskPhotoUseCase(this.repository);
 
-  /// Sends a base64-encoded image for the given taskId
+  /// Sends a TaskPhotoModel for upload
   /// and returns the created TaskPhoto
-  Future<TaskPhoto> call(String taskId, String base64Image) {
-    return repository.uploadPhoto(taskId, base64Image);
+  Future<TaskPhotoModel> call(TaskPhotoModel photo) {
+    return repository.uploadPhoto(photo);
   }
 }
 
@@ -32,7 +32,7 @@ class DeleteTaskPhotoUseCase {
   DeleteTaskPhotoUseCase(this.repository);
 
   /// Deletes a photo by its id
-  Future<void> call(String photoId) {
-    return repository.deletePhoto(photoId);
+  Future<void> call({required int id}) {
+    return repository.deletePhoto(id: id);
   }
 }

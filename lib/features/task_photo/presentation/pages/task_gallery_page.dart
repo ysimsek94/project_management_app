@@ -1,14 +1,20 @@
 import 'dart:convert';
+import 'package:photo_view/photo_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/services/photo_picker_service.dart';
 import 'package:project_management_app/core/widgets/app_alerts.dart';
+import 'package:path/path.dart' as p;
+import '../../../../core/preferences/AppPreferences.dart';
+import '../../../../core/widgets/app_custom_app_bar.dart';
+import '../../../task/data/models/task_list_item_model.dart';
+import '../../data/models/task_photo_model.dart';
 import '../bloc/task_photo_cubit.dart';
 import '../bloc/task_photo_state.dart';
 
 class TaskGalleryPage extends StatefulWidget {
-  final String taskId;
-  const TaskGalleryPage({Key? key, required this.taskId}) : super(key: key);
+  final TaskListItemModel taskItemRequestModel;
+  const TaskGalleryPage({Key? key, required this.taskItemRequestModel}) : super(key: key);
 
   @override
   State<TaskGalleryPage> createState() => _TaskGalleryPageState();
@@ -18,8 +24,35 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
   @override
   void initState() {
     super.initState();
-    // Sayfa açılınca taskId ile fotoğrafları yükle
-    context.read<TaskPhotoCubit>().loadPhotos(widget.taskId);
+    // Sayfa açılınca fazId, gorevId ve loadImage ile fotoğrafları yükle
+    context.read<TaskPhotoCubit>().loadPhotos(
+      fazId: widget.taskItemRequestModel.projeFazGorev.fazId,
+      gorevId: widget.taskItemRequestModel.projeFazGorev.id,
+      loadImage: false,
+    );
+  }
+
+  /// Builds a circular icon + label card for the action sheet
+  Widget _buildActionCard(IconData icon, String label, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 28,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: Icon(icon, size: 28, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickAndUpload(bool fromCamera) async {
@@ -27,10 +60,27 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
+    // Derive the file name and extension
+    final fileName = p.basename(file.path);
+    final fileExtension = p.extension(file.path).replaceFirst('.', '');
+
     final base64 = base64Encode(bytes);
 
     try {
-      await context.read<TaskPhotoCubit>().upload(widget.taskId, base64);
+      await context.read<TaskPhotoCubit>().upload(
+        TaskPhotoModel(
+          id:0,
+          fazId: widget.taskItemRequestModel.projeFazGorev.fazId,
+          gorevId: widget.taskItemRequestModel.projeFazGorev.id,
+          docBinary: base64,
+          thumbnailBinary: base64,
+          kayitEden: AppPreferences.username ?? '',
+          islemTarihi: DateTime.now().toIso8601String(),
+          docName: fileName,
+          uzanti: fileExtension,
+          aciklama: '',
+        ),
+      );
       AppAlerts.showSuccess(context, 'Fotoğraf yüklendi.');
     } catch (_) {
       // Hata state listener tarafından gösterilecek
@@ -40,22 +90,49 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Fotoğraflar')),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'camera',
-            child: const Icon(Icons.camera_alt),
-            onPressed: () => _pickAndUpload(true),
-          ),
-          const SizedBox(height: 8),
-          FloatingActionButton(
-            heroTag: 'gallery',
-            child: const Icon(Icons.photo_library),
-            onPressed: () => _pickAndUpload(false),
-          ),
-        ],
+      appBar: CustomAppBar(
+        title: 'Fotoğraflar',
+        showBackButton: true,
+      ),
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            builder: (_) => SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildActionCard(
+                      Icons.camera_alt,
+                      'Kamera',
+                      () {
+                        Navigator.pop(context);
+                        _pickAndUpload(true);
+                      },
+                    ),
+                    _buildActionCard(
+                      Icons.photo_library,
+                      'Galeriden',
+                      () {
+                        Navigator.pop(context);
+                        _pickAndUpload(false);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        tooltip: 'Fotoğraf Ekle',
+        child: const Icon(Icons.add_a_photo_outlined),
       ),
       body: BlocConsumer<TaskPhotoCubit, TaskPhotoState>(
         listener: (context, state) {
@@ -64,98 +141,120 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
           }
         },
         builder: (context, state) {
-          if (state is TaskPhotoLoading || state is TaskPhotoInitial) {
+          // During initial load (no photos yet), show only spinner
+          if (state is TaskPhotoLoading && (state.photos.isEmpty)) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state is TaskPhotoLoaded) {
-            if (state.photos.isEmpty) {
-              return const Center(child: Text('Fotoğraf bulunamadı.'));
-            }
-            return GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: state.photos.length,
-              itemBuilder: (context, index) {
-                final photo = state.photos[index];
-                final widgetImage = photo.base64Image.startsWith('http')
-                    ? Image.network(photo.base64Image, fit: BoxFit.cover)
-                    : Image.memory(
-                        base64Decode(photo.base64Image),
-                        fit: BoxFit.cover,
-                      );
+          final photos = state is TaskPhotoLoaded
+              ? state.photos
+              : state is TaskPhotoLoading
+                  ? state.photos
+                  : <TaskPhotoModel>[];
 
-                return GestureDetector(
-                  onTap: () {
-                    showGeneralDialog(
-                      context: context,
-                      barrierDismissible: true,
-                      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-                      transitionDuration: const Duration(milliseconds: 300),
-                      pageBuilder: (ctx, anim1, anim2) {
-                        return Center(
-                          child: Material(
-                            color: Colors.transparent,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: photo.base64Image.startsWith('http')
-                                  ? Image.network(photo.base64Image, fit: BoxFit.contain)
-                                  : Image.memory(base64Decode(photo.base64Image), fit: BoxFit.contain),
+          // After load, if loaded but still empty, show no-photos message
+          if (state is TaskPhotoLoaded && photos.isEmpty) {
+            return const Center(child: Text('Fotoğraf bulunamadı.'));
+          }
+
+          return Stack(
+            children: [
+              if (photos.isNotEmpty)
+                GridView.builder(
+                  padding: const EdgeInsets.all(12),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: photos.length,
+                  itemBuilder: (context, index) {
+                    final photo = photos[index];
+                    final widgetImage = photo.thumbnailBinary.startsWith('http')
+                        ? Image.network(photo.thumbnailBinary, fit: BoxFit.cover)
+                        : Image.memory(
+                            base64Decode(photo.thumbnailBinary),
+                            fit: BoxFit.cover,
+                          );
+
+                    return GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: true,
+                          builder: (_) => Dialog(
+                            backgroundColor: Colors.transparent,
+                            insetPadding: EdgeInsets.zero,
+                            child: Stack(
+                              children: [
+                                PhotoView(
+                                  imageProvider: photo.thumbnailBinary.startsWith('http')
+                                      ? NetworkImage(photo.thumbnailBinary)
+                                      : MemoryImage(base64Decode(photo.thumbnailBinary)) as ImageProvider,
+                                  backgroundDecoration: BoxDecoration(color: Colors.black87),
+                                  minScale: PhotoViewComputedScale.contained,
+                                  maxScale: PhotoViewComputedScale.covered * 2,
+                                ),
+                                Positioned(
+                                  top: 16,
+                                  right: 16,
+                                  child: InkWell(
+                                    onTap: () => Navigator.of(context).pop(),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      padding: EdgeInsets.all(8),
+                                      child: Icon(Icons.close, color: Colors.white, size: 24),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
                       },
-                      transitionBuilder: (ctx, anim1, anim2, child) {
-                        return FadeTransition(
-                          opacity: anim1,
-                          child: ScaleTransition(
-                            scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
-                            child: child,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(child: widgetImage),
+                          Positioned(
+                            top: 1,
+                            right: 4,
+                            child: IconButton(
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(),
+                              iconSize: 16,
+                              color: Colors.white,
+                              icon: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black45,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.delete, size: 24, color: Colors.white),
+                              ),
+                              onPressed: () async {
+                                final ok = await AppAlerts.showConfirmationDialog(
+                                  context,
+                                  title: 'Silmek istiyor musunuz?',
+                                );
+                                if (!ok) return;
+                                await context.read<TaskPhotoCubit>().delete(photo.id);
+                                AppAlerts.showSuccess(context, 'Fotoğraf silindi.');
+                              },
+                            ),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     );
                   },
-                  child: Stack(
-                    children: [
-                      Positioned.fill(child: widgetImage),
-                      Positioned(
-                        top: 1,
-                        right: 4,
-                        child: IconButton(
-                          padding: const EdgeInsets.all(4),
-                          constraints: const BoxConstraints(),
-                          iconSize: 16,
-                          color: Colors.white,
-                          icon: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black45,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.delete, size: 24, color: Colors.white),
-                          ),
-                          onPressed: () async {
-                            final ok = await AppAlerts.showConfirmationDialog(
-                              context,
-                              title: 'Silmek istiyor musunuz?',
-                            );
-                            if (!ok) return;
-                            await context.read<TaskPhotoCubit>().delete(photo.id);
-                            AppAlerts.showSuccess(context, 'Fotoğraf silindi.');
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          }
-          // Başlangıçta boş göster
-          return const SizedBox.shrink();
+                ),
+              if (state is TaskPhotoLoading)
+                Container(
+                  color: Colors.black45,
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+            ],
+          );
         },
       ),
     );

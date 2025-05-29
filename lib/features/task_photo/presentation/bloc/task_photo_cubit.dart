@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/entities/task_photo.dart';
-
+import '../../data/models/task_photo_model.dart';
 import '../../domain/usecases/task_photo_usecases.dart';
 import 'task_photo_state.dart';
 
@@ -16,10 +15,21 @@ class TaskPhotoCubit extends Cubit<TaskPhotoState> {
       ) : super(TaskPhotoInitial());
 
   /// Göreve ait fotoğrafları yükler
-  Future<void> loadPhotos(String taskId) async {
-    emit(TaskPhotoLoading());
+  Future<void> loadPhotos({
+    required int fazId,
+    required int gorevId,
+    bool loadImage = true,
+  }) async {
+    // Preserve existing photos
+    final prevState = state;
+    final List<TaskPhotoModel> photos = prevState is TaskPhotoLoaded
+        ? List<TaskPhotoModel>.from(prevState.photos)
+        : <TaskPhotoModel>[];
+
+    // Loading state with current list
+    emit(TaskPhotoLoading(photos));
     try {
-      final list = await _getPhotos.call(taskId);
+      final list = await _getPhotos.call(fazId, gorevId, loadImage);
       emit(TaskPhotoLoaded(list));
     } catch (e) {
       emit(TaskPhotoError('Fotoğraflar alınamadı: $e'));
@@ -27,13 +37,18 @@ class TaskPhotoCubit extends Cubit<TaskPhotoState> {
   }
 
   /// Yeni fotoğraf yükler, başarılıysa listeye ekler
-  Future<void> upload(String taskId, String base64) async {
+  Future<void> upload(TaskPhotoModel photo) async {
+    // 1) Mevcut fotoğrafları al
+    final prevState = state;
+    final List<TaskPhotoModel> photos = prevState is TaskPhotoLoaded
+        ? List<TaskPhotoModel>.from(prevState.photos)
+        : <TaskPhotoModel>[];
+
+    // 2) Loading state
+    emit(TaskPhotoLoading(photos));
+    // 3) Yeni fotoğrafı yükle, listeye ekle ve yayını güncelle
     try {
-      final TaskPhoto created = await _uploadPhoto.call(taskId, base64);
-      final current = state;
-      final photos = (current is TaskPhotoLoaded)
-          ? List<TaskPhoto>.from(current.photos)
-          : <TaskPhoto>[];
+      final TaskPhotoModel created = await _uploadPhoto.call(photo);
       photos.add(created);
       emit(TaskPhotoLoaded(photos));
     } catch (e) {
@@ -42,9 +57,9 @@ class TaskPhotoCubit extends Cubit<TaskPhotoState> {
   }
 
   /// Fotoğraf siler, başarılıysa listeden çıkarır
-  Future<void> delete(String photoId) async {
+  Future<void> delete(int photoId) async {
     try {
-      await _deletePhoto.call(photoId);
+      await _deletePhoto.call(id: photoId);
       final current = state;
       if (current is TaskPhotoLoaded) {
         final filtered = current.photos.where((p) => p.id != photoId).toList();
