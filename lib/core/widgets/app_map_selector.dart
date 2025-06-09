@@ -7,6 +7,8 @@ import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 import 'app_alerts.dart';
 
 enum MapInteractionMode {
@@ -49,9 +51,13 @@ class _MapSelectorState extends State<MapSelector> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+
+    // Gelen initialPoints varsa onları kullan, yoksa initialLocation varsa onu kullan
     _points = widget.initialPoints ??
         (widget.initialLocation != null ? [widget.initialLocation!] : []);
-    if (widget.autoInitLocation) {
+
+    // Sadece hiçbir konum verisi yoksa ve autoInitLocation açıksa cihaz konumunu al
+    if (_points.isEmpty && widget.autoInitLocation) {
       _handlePermissionsAndInit();
     }
   }
@@ -77,26 +83,25 @@ class _MapSelectorState extends State<MapSelector> {
       return;
     }
     // Fetch position
-    LatLng loc;
+    LatLng? loc;
     try {
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
       loc = LatLng(pos.latitude, pos.longitude);
-    } catch (_) {
-      final last = await Geolocator.getLastKnownPosition();
-      if (last != null) {
-        loc = LatLng(last.latitude, last.longitude);
-      } else {
-        loc = LatLng(41.0082, 28.9784); // Istanbul
-      }
+    } catch (e) {
+      debugPrint('Konum alınamadı: $e');
+      AppAlerts.showError(context, 'Konum alınamadı. Lütfen konum izinlerini kontrol edin.');
+      return;
     }
-    setState(() {
-      _points = [loc];
-    });
-    widget.onPointsChanged(_points);
-    // Move map center to new location
-    _mapController.move(loc, 15.0);
+    if (loc != null) {
+      setState(() {
+        _points = [loc!];
+      });
+      widget.onPointsChanged(_points);
+      // Move map center to new location
+      _mapController.move(loc, 15.0);
+    }
   }
 
   Future<void> _searchAndCenter(String address) async {
@@ -161,7 +166,7 @@ class _MapSelectorState extends State<MapSelector> {
       children: [
         if (widget.enableSearch)
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.w),
             child: TypeAheadField<String>(
               // Build the TextField
               builder: (context, TextEditingController controller, FocusNode focusNode) {
@@ -171,7 +176,7 @@ class _MapSelectorState extends State<MapSelector> {
                   decoration: InputDecoration(
                     hintText: 'Adres ara...',
                     prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
                   ),
                   textInputAction: TextInputAction.search,
                   onSubmitted: (value) => _searchAndCenter(value),
@@ -197,7 +202,7 @@ class _MapSelectorState extends State<MapSelector> {
               decorationBuilder: (context, suggestionsBox) {
                 return Material(
                   elevation: 4.0,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.r),
                   child: suggestionsBox,
                 );
               },
@@ -233,9 +238,13 @@ class _MapSelectorState extends State<MapSelector> {
                 markers: _points.map((point) {
                   return Marker(
                     point: point,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(Icons.location_on, color: Colors.red, size: 36),
+                    width: 40.w,
+                    height: 40.h,
+                    child: Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 36.sp,
+                    ),
                   );
                 }).toList(),
               ),

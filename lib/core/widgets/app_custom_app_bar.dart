@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../utils/app_navigator.dart';
-import '../utils/app_styles.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -29,7 +29,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       leading: showBackButton
           ? IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.black,
+                size: 24.sp,
+              ),
               onPressed: onBack != null
                   ? onBack!
                   : () => AppNavigator.maybePopWithResult(context),
@@ -37,7 +41,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           : null,
       title: Text(
         title,
-        style: AppTypography.bold20(),
+        style: TextStyle(
+          fontSize: 20.sp,
+          fontWeight: FontWeight.bold,
+          color: Colors.black,
+        ),
       ),
       actions: actions,
     );

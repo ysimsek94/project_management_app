@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/preferences/AppPreferences.dart';
 import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
 import 'package:project_management_app/features/task/data/models/task_request_model.dart';
+import '../../../../core/constants/gorev_durum_enum.dart';
 import '../../domain/usecases/task_usecases.dart';
 import 'task_state.dart';
 import '../../data/models/task_list_request_model.dart';
@@ -40,9 +41,9 @@ class TaskCubit extends Cubit<TaskState> {
       final request = TaskListRequestModel(
           gorevId: 0,
           kullaniciId: AppPreferences.kullaniciId ?? 0,
-          durumId: 0,
+          durum: GorevDurumEnum.none,
           baslangicTarihi: "2025-01-01T00:00:00",
-          baslangicTarihi1: "");
+          baslangicTarihi1: null);
 
       var tasks = await _taskUseCases.getTaskList(request);
       _allTasks = tasks; // tam listeyi saklıyoruz
@@ -51,7 +52,16 @@ class TaskCubit extends Cubit<TaskState> {
       emit(TaskFailure('Görevler yüklenemedi: $e'));
     }
   }
-
+  Future<void> getAllTaskList() async {
+    emit(TaskLoadInProgress());
+    try {
+      var tasks = await _taskUseCases.getAllTaskList();
+      _allTasks = tasks; // tam listeyi saklıyoruz
+      emit(TaskLoadSuccess(_allTasks)); // ekrana tam listeyi basıyoruz
+    } catch (e) {
+      emit(TaskFailure('Görevler yüklenemedi: $e'));
+    }
+  }
   Future<void> fetchLastTasks(TaskListRequestModel taskListRequestModel) async {
     emit(TaskLoadInProgress());
     try {

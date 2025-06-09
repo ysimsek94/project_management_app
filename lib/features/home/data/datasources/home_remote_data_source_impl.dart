@@ -1,21 +1,14 @@
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../../core/network/base_remote_data_source.dart';
-import '../models/dashboard_task_model.dart';
 import '../models/status_summary_model.dart';
 import 'home_remote_data_source.dart';
+
 
 class HomeRemoteDataSourceImpl extends BaseRemoteDataSource implements HomeRemoteDataSource {
   HomeRemoteDataSourceImpl(ApiService apiService) : super(apiService);
 
-  @override
-  Future<List<DashboardTaskModel>> fetchDashboardTasks() async {
-    final response = await api.get('/Proje/v1/kullanici-gorev-dashboard/getall');
-    return api.handleResponse<List<DashboardTaskModel>>(
-      response,
-          (data) => (data as List).map((e) => DashboardTaskModel.fromJson(e)).toList(),
-    );
-  }
+
 
   @override
   Future<List<StatusSummaryModel>> fetchStatusSummary() {
@@ -29,5 +22,20 @@ class HomeRemoteDataSourceImpl extends BaseRemoteDataSource implements HomeRemot
       },
     );
     return result;
+  }
+  @override
+  Future<List<StatusSummaryModel>> fetchFaliyetStatusSummary() async {
+    // Mock veri oluşturmak için örnek liste
+    final List<StatusSummaryModel> mockStatusSummaries = [
+      StatusSummaryModel(name: 'DevamEdiyor', value: 42.0),
+      StatusSummaryModel(name: 'Tamamlandi', value: 13.0),
+      StatusSummaryModel(name: 'IptalEdildi', value: 8.0),
+      StatusSummaryModel(name: 'Atandı', value: 5.0),
+      StatusSummaryModel(name: 'Olusturuldu', value: 8.0),
+    ];
+
+    // Mock veri döndürülüyor
+    await Future.delayed(const Duration(milliseconds: 300)); // Yapay gecikme
+    return mockStatusSummaries;
   }
 }

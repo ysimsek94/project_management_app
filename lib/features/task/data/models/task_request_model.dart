@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import '../../../../core/constants/gorev_durum_enum.dart';
 
 part 'task_request_model.g.dart';
 
@@ -24,8 +25,8 @@ class TaskRequestModel {
   final double gerceklesmeYuzde;
   @JsonKey(defaultValue: '')
   final String tamamlanmaTarihi;
-  @JsonKey(defaultValue: 0)
-  final int durumId;
+  @JsonKey(name: 'durumId', fromJson: GorevDurumEnumHelper.fromId, toJson: _gorevDurumToJson)
+  final GorevDurumEnum durum;
   @JsonKey(includeIfNull: false)
   final Map<String, dynamic>? geom;
 
@@ -41,7 +42,7 @@ class TaskRequestModel {
     required this.fizikiYuzde,
     required this.gerceklesmeYuzde,
     required this.tamamlanmaTarihi,
-    required this.durumId,
+    required this.durum,
     this.geom,
   });
 
@@ -50,3 +51,5 @@ class TaskRequestModel {
 
   Map<String, dynamic> toJson() => _$TaskRequestModelToJson(this);
 }
+
+int _gorevDurumToJson(GorevDurumEnum durum) => durum.id;

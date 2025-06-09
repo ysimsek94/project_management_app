@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/constants/app_assets.dart';
-import 'package:project_management_app/core/constants/app_sizes.dart';
-import 'package:project_management_app/core/utils/app_styles.dart';
 import 'package:project_management_app/core/widgets/app_alerts.dart';
 import 'package:project_management_app/core/widgets/app_text_field.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
@@ -89,25 +87,17 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      // Giriş ekranı için gradyan arka plan
       body: SafeArea(
         child: Container(
           width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white,
-                Colors.blueGrey.shade50,
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
+          // Tek ton, çok açık gri arka plan
+          color: const Color(0xFFF9FAFB),
           child: Center(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -116,44 +106,43 @@ class _LoginPageState extends State<LoginPage> {
                     // Logo
                     Image.asset(
                       AppAssets.bigatekLogo,
-                      height: 70,
+                      height: 60,
                     ),
-                    AppSizes.gapH40,
+                    const SizedBox(height: 32),
 
                     // Başlık metni
                     Text(
                       'Hoşgeldiniz',
-                      style: AppTypography.bold24().copyWith(
+                      style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
                       ),
                     ),
-                    AppSizes.gapH12,
+                    const SizedBox(height: 8),
+                    // Alt metin
                     Text(
-                      'Lütfen giriş yapın',
-                      style: AppTypography.medium12().copyWith(
-                        color: Colors.grey[600],
+                      'Hesabınıza giriş yapın',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.grey.shade500,
                       ),
                     ),
-                    AppSizes.gapH32,
+                    const SizedBox(height: 32),
 
-                    // TC Kimlik No alanı ve doğrulama
-                   AppTextField(
+                    // TC Kimlik No alanı
+                    AppTextField(
                       hint: 'TC Kimlik No',
                       textEditingController: _tcController,
                       keyboardType: TextInputType.number,
                       maxLength: 11,
-                      borderRadius: 12,
                       validator: _validateTcKimlikNo,
-
                     ),
-                    AppSizes.gapH16,
+                    const SizedBox(height: 16),
 
-                    // Şifre alanı ve görünürlük değiştirme
+                    // Şifre alanı
                     AppTextField(
                       hint: 'Şifre',
                       textEditingController: _passwordController,
                       obscureText: _obscurePassword,
-                      borderRadius: 12,
                       suffixIcon: _obscurePassword
                           ? Icons.visibility_off
                           : Icons.visibility,
@@ -162,34 +151,29 @@ class _LoginPageState extends State<LoginPage> {
                           _obscurePassword = !_obscurePassword;
                         });
                       },
-                      // Şifre alanı için doğrulama metodu
                       validator: _validatePassword,
                     ),
-                    AppSizes.gapH12,
+                    const SizedBox(height: 12),
 
-                    // Removed the "Şifremi Unuttum?" link and the following gap
-
+                    // Beni Hatırla seçeneği
                     Row(
                       children: [
                         Checkbox(
                           value: _rememberMe,
-                          onChanged: (value) {
-                            setState(() {
-                              _rememberMe = value ?? false;
-                            });
-                          },
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          onChanged: (val) => setState(() => _rememberMe = val ?? false),
+                          activeColor: theme.colorScheme.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Beni Hatırla',
-                          style: AppTypography.medium14(),
+                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey.shade800),
                         ),
                       ],
                     ),
-                    AppSizes.gapH16,
+                    const SizedBox(height: 24),
 
-                    // Yükleme durumlu Giriş Yap butonu
+                    // Giriş Yap butonu
                     BlocConsumer<LoginCubit, LoginState>(
                       listener: (context, state) {
                         if (state is LoginNavigate) {
@@ -199,32 +183,26 @@ class _LoginPageState extends State<LoginPage> {
                           } else {
                             AppPreferences.removeCredentials();
                           }
-                          // Başarılı login sonrası ana sayfaya yönlendir
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/home',
-                            (route) => false,
-                          );
+                          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
                         } else if (state is LoginFailure) {
-                          // Hata mesajını göster
                           AppAlerts.showError(context, state.message);
                         }
                       },
                       builder: (context, state) {
                         return AppButton(
                           width: double.infinity,
-                          title: 'Giriş Yap',
+                          title: state is LoginLoading ? '' : 'Giriş Yap',
                           onClick: _onLoginPressed,
                           isLoading: state is LoginLoading,
                         );
                       },
                     ),
-                    AppSizes.gapH40,
+                    const SizedBox(height: 40),
 
                     // Alt bilgi
-                    const Text(
+                    Text(
                       'Copyright © 2025 BIGATEK',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade500),
                     ),
                   ],
                 ),

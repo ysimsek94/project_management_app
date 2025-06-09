@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/core/services/photo_picker_service.dart';
 import 'package:project_management_app/core/widgets/app_alerts.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/widgets/app_custom_app_bar.dart';
 import '../../../task/data/models/task_list_item_model.dart';
@@ -41,11 +42,11 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
-            radius: 28,
+            radius: 28.r,
             backgroundColor: Theme.of(context).colorScheme.primary,
-            child: Icon(icon, size: 28, color: Colors.white),
+            child: Icon(icon, size: 28.sp, color: Colors.white),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.h),
           Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium,
@@ -103,7 +104,7 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
             ),
             builder: (_) => SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 24.w),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -160,11 +161,11 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
             children: [
               if (photos.isNotEmpty)
                 GridView.builder(
-                  padding: const EdgeInsets.all(12),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  padding: EdgeInsets.all(12.w),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
+                    crossAxisSpacing: 8.w,
+                    mainAxisSpacing: 8.h,
                   ),
                   itemCount: photos.length,
                   itemBuilder: (context, index) {
@@ -195,8 +196,8 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
                                   maxScale: PhotoViewComputedScale.covered * 2,
                                 ),
                                 Positioned(
-                                  top: 16,
-                                  right: 16,
+                                  top: 16.h,
+                                  right: 16.w,
                                   child: InkWell(
                                     onTap: () => Navigator.of(context).pop(),
                                     child: Container(
@@ -204,8 +205,8 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
                                         color: Colors.black54,
                                         shape: BoxShape.circle,
                                       ),
-                                      padding: EdgeInsets.all(8),
-                                      child: Icon(Icons.close, color: Colors.white, size: 24),
+                                      padding: EdgeInsets.all(8.w),
+                                      child: Icon(Icons.close, color: Colors.white, size: 24.sp),
                                     ),
                                   ),
                                 ),
@@ -221,16 +222,16 @@ class _TaskGalleryPageState extends State<TaskGalleryPage> {
                             top: 1,
                             right: 4,
                             child: IconButton(
-                              padding: const EdgeInsets.all(4),
+                              padding: EdgeInsets.all(4.w),
                               constraints: const BoxConstraints(),
-                              iconSize: 16,
+                              iconSize: 16.sp,
                               color: Colors.white,
                               icon: Container(
                                 decoration: const BoxDecoration(
                                   color: Colors.black45,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.delete, size: 24, color: Colors.white),
+                                child: Icon(Icons.delete, size: 24.sp, color: Colors.white),
                               ),
                               onPressed: () async {
                                 final ok = await AppAlerts.showConfirmationDialog(

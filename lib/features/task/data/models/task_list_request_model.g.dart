@@ -11,9 +11,9 @@ TaskListRequestModel _$TaskListRequestModelFromJson(
     TaskListRequestModel(
       gorevId: (json['gorevId'] as num).toInt(),
       kullaniciId: (json['kullaniciId'] as num).toInt(),
-      durumId: (json['durumId'] as num).toInt(),
-      baslangicTarihi: json['baslangicTarihi'] as String,
-      baslangicTarihi1: json['baslangicTarihi1'] as String,
+      durum: GorevDurumEnumHelper.fromId((json['durumId'] as num).toInt()),
+      baslangicTarihi: json['baslangicTarihi'] as String?,
+      baslangicTarihi1: json['baslangicTarihi1'] as String?,
     );
 
 Map<String, dynamic> _$TaskListRequestModelToJson(
@@ -21,7 +21,7 @@ Map<String, dynamic> _$TaskListRequestModelToJson(
     <String, dynamic>{
       'gorevId': instance.gorevId,
       'kullaniciId': instance.kullaniciId,
-      'durumId': instance.durumId,
+      'durumId': _gorevDurumToJson(instance.durum),
       'baslangicTarihi': instance.baslangicTarihi,
       'baslangicTarihi1': instance.baslangicTarihi1,
     };

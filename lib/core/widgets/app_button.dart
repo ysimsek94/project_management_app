@@ -43,12 +43,12 @@ class AppButton extends StatelessWidget {
 
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minWidth: minWidth,
-        minHeight: height,
+        minWidth: minWidth.w,
+        minHeight: height.h,
       ),
       child: SizedBox(
-        width: width,
-        height: height,
+        width: width?.w,
+        height: height.h,
         child: type == ButtonType.text
             ? TextButton(
           onPressed: onClick,
@@ -58,7 +58,7 @@ class AppButton extends StatelessWidget {
                 ? Colors.grey
                 : primary.withOpacity(0.9),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius),
+              borderRadius: BorderRadius.circular(borderRadius.r),
             ),
           ),
           child: _buildContent(primary, isDisabled),
@@ -70,7 +70,7 @@ class AppButton extends StatelessWidget {
             side: type == ButtonType.outlined
                 ? BorderSide(
               color: isDisabled ? Colors.grey : primary,
-              width: 1.2,
+              width: 1.2.w,
             )
                 : null,
             foregroundColor: isDisabled
@@ -83,7 +83,7 @@ class AppButton extends StatelessWidget {
                 : Colors.transparent,
             elevation: elevation,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(borderRadius),
+              borderRadius: BorderRadius.circular(borderRadius.r),
             ),
             shadowColor: primary.withOpacity(0.2),
           ),
@@ -96,10 +96,10 @@ class AppButton extends StatelessWidget {
   Widget _buildContent(Color primary, bool isDisabled) {
     return isLoading
         ? SizedBox(
-      width: 20,
-      height: 20,
+      width: 20.w,
+      height: 20.w,
       child: CircularProgressIndicator(
-        strokeWidth: 2,
+        strokeWidth: 2.w,
         valueColor: AlwaysStoppedAnimation<Color>(
           type == ButtonType.filled && !isDisabled
               ? Colors.white
@@ -118,7 +118,7 @@ class AppButton extends StatelessWidget {
             padding: EdgeInsets.only(right: 8.w),
             child: Icon(
               icon,
-              size: 20,
+              size: 20.sp,
               color: type == ButtonType.filled && !isDisabled
                   ? Colors.white
                   : isDisabled

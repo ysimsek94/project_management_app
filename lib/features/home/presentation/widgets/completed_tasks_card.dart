@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
 
 class StatusItemData {
@@ -13,75 +15,123 @@ class StatusItemData {
   });
 }
 
-class CompletedTasksCard extends StatelessWidget {
+class StatusProgressCard extends StatefulWidget {
+  final String title;
   final List<StatusItemData> statusItems;
 
-  const CompletedTasksCard({
+  const StatusProgressCard({
     Key? key,
+    required this.title,
     required this.statusItems,
   }) : super(key: key);
 
   @override
+  State<StatusProgressCard> createState() => _StatusProgressCardState();
+}
+
+class _StatusProgressCardState extends State<StatusProgressCard> {
+  int? touchedIndex;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Görevlerim',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-          // Progress list design
-          Column(
-            children: statusItems.map((item) {
-              final count = (item.percent * 100).round();
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: Text(
-                        '${item.label}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                   AppSizes.gapW12,
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: item.percent,
-                          minHeight: 12,
-                          color: item.color,
-                          backgroundColor: item.color.withOpacity(0.2),
+    return Card(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      color: Colors.white,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
+            AppSizes.gapH16,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: AspectRatio(
+                    aspectRatio: 1.3,
+                    child: PieChart(
+                      PieChartData(
+                        pieTouchData: PieTouchData(
+                          touchCallback:
+                              (FlTouchEvent event, pieTouchResponse) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions ||
+                                  pieTouchResponse == null ||
+                                  pieTouchResponse.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+                              touchedIndex = pieTouchResponse
+                                  .touchedSection!.touchedSectionIndex;
+                            });
+                          },
                         ),
+                        borderData: FlBorderData(show: false),
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 30,
+                        sections:
+                            widget.statusItems.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final item = entry.value;
+                          final isTouched = index == touchedIndex;
+                          final fontSize = isTouched ? 18.0 : 12.0;
+                          final radius = isTouched ? 50.0 : 40.0;
+                          return PieChartSectionData(
+                            color: item.color,
+                            value: item.percent * 100,
+                            title: '${(item.percent * 100).round()}%',
+                            radius: radius,
+                            titleStyle: TextStyle(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: const [
+                                Shadow(color: Colors.black26, blurRadius: 2)
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
-                    AppSizes.gapW4,
-                    Text(
-                      '${(item.percent * 100).round()}%',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
-        ],
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: widget.statusItems.map((item) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                                color: item.color, shape: BoxShape.circle),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            item.label,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

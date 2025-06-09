@@ -1,36 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
-import 'package:project_management_app/features/project/domain/usecases/get_projects_usecase.dart';
+import 'package:project_management_app/core/constants/gorev_durum_enum.dart';
+import 'package:project_management_app/features/home/domain/usecases/admin_dashboard_usecase.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
 import 'package:project_management_app/injection.dart';
 import '../../../../core/preferences/AppPreferences.dart';
-import '../../../../core/utils/app_styles.dart';
+import '../../../activity/domain/usecases/activity_usecases.dart';
+import '../../../activity/presentation/bloc/activity_cubit.dart';
+import '../../../activity/presentation/pages/activity_list_page.dart';
 import '../../../profile/domain/usecases/profile_usecases.dart';
 import '../../../profile/presentation/bloc/profile_cubit.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../../../task/presentation/bloc/task_cubit.dart';
-import 'package:project_management_app/features/task/data/models/task_list_request_model.dart';
 import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
+import '../../../task/presentation/bloc/task_state.dart';
 import '../../../task/presentation/widgets/last_task_list.dart';
 import '../../presentation//widgets/completed_tasks_card.dart';
-import '../../presentation//widgets/projects_performance_card.dart';
-import '../../presentation/widgets/weekly_request_task_card.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/features/home/presentation/cubit/home_cubit.dart';
 import 'package:project_management_app/features/home/domain/usecases/home_usecases.dart';
+import 'package:project_management_app/features/home/presentation/pages/admin_dashboard_page.dart';
+import 'package:project_management_app/features/home/presentation/cubit/admin_dashboard_cubit.dart';
 
 class HomePage extends StatefulWidget {
-  final GetProjectsUseCase getProjectsUseCase;
   final TaskUseCases taskUseCases;
+  final ActivityUseCases activityUseCases;
 
   const HomePage({
     super.key,
-    required this.getProjectsUseCase,
     required this.taskUseCases,
+    required this.activityUseCases,
   });
 
   @override
@@ -41,19 +44,6 @@ class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
   bool get isAdmin => context.hasRole('admin');
-
-  Color _statusColorForLabel(String label) {
-    switch (label.toLowerCase()) {
-      case 'tamamlandi':
-        return Colors.green;
-      case 'atandı':
-        return Colors.orange;
-      case 'iptal edildi':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
 
   /// Sayfa içeriği ve alt menülerin yönetimi
   @override
@@ -81,6 +71,18 @@ class _HomePageState extends State<HomePage> {
       },
       {
         'page': BlocProvider(
+          create: (_) => ActivityCubit(widget.activityUseCases),
+          child: ActivityListPage(
+            activityUseCases: widget.activityUseCases,
+          ),
+        ),
+        'item': const AppBottomNavBarItem(
+          icon: Icons.event,
+          label: 'Faliyetler',
+        ),
+      },
+      {
+        'page': BlocProvider(
           create: (_) => ProfileCubit(getIt<ProfileUseCase>()),
           child: const ProfilePage(),
         ),
@@ -91,19 +93,45 @@ class _HomePageState extends State<HomePage> {
       }
     ];
 
-    final List<Widget> pages =
-    navConfig.map<Widget>((e) => e['page'] as Widget).toList();
     final List<AppBottomNavBarItem> items = navConfig
         .map<AppBottomNavBarItem>((e) => e['item'] as AppBottomNavBarItem)
         .toList();
 
+    List<Widget> pages = navConfig.map<Widget>((e) => e['page'] as Widget).toList();
+    if (isAdmin) {
+      pages[0] = BlocProvider(
+        create: (_) => AdminDashboardCubit(getIt<AdminDashboardDataUseCases>())..loadAll(),
+        child: Stack(
+          children: [
+            _buildGradientBackground(),
+            SafeArea(
+              child: Column(
+                children: [
+                  AppSizes.gapH16,
+                  _buildHeaderSection(),
+                  AppSizes.gapH16,
+                  const Expanded(child: AdminDashboardPage()),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // In build():
     return Scaffold(
       body: pages[_currentIndex],
-      bottomNavigationBar: AppBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: items,
-      ),
+      bottomNavigationBar: _buildBottomNavBar(items),
+    );
+  }
+
+  /// Builds the bottom navigation bar.
+  Widget _buildBottomNavBar(List<AppBottomNavBarItem> items) {
+    return AppBottomNavBar(
+      currentIndex: _currentIndex,
+      onTap: (index) => setState(() => _currentIndex = index),
+      items: items,
     );
   }
 
@@ -117,10 +145,10 @@ class _HomePageState extends State<HomePage> {
             children: [
               AppSizes.gapH16,
               _buildHeaderSection(),
-              AppSizes.gapH24,
+              AppSizes.gapH16,
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(8.w),
                   child: _buildDashboardCards(),
                 ),
               ),
@@ -134,7 +162,7 @@ class _HomePageState extends State<HomePage> {
   /// Üst kısımdaki degrade arka plan
   Widget _buildGradientBackground() {
     return Container(
-      height: 250,
+      height: 250.h,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [context.theme.primaryColor, Colors.white10],
@@ -145,27 +173,53 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Profil ve kullanıcı başlığı
+  /// Profil ve kullanıcı başlığı (kurumsal, minimalist)
   Widget _buildHeaderSection() {
     final adSoyad = (AppPreferences.username ?? '').trim();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Container(
+      height: 100.h,
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Küçük, sade bir avatar
           CircleAvatar(
-            radius: 40,
-            backgroundColor: Theme.of(context).primaryColor,
-            child: const Icon(Icons.person, size: 45, color: Colors.white),
+            radius: 32.r,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: Icon(Icons.person_outline, size: 32.sp, color: Colors.white),
           ),
-          const SizedBox(width: 16),
-          Text(
-            adSoyad.isNotEmpty ? adSoyad : "Kullanıcı",
-            style: AppTypography.bold10().copyWith(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
+          SizedBox(width: 16.w),
+          // Kullanıcı adı ve karşılama metni
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  adSoyad.isNotEmpty ? adSoyad : "Kullanıcı",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  'Hoş geldiniz!',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.75),
+                        fontWeight: FontWeight.w400,
+                      ),
+                ),
+              ],
             ),
           ),
+          // Eğer ileride bir bildirim/ayarlar ikonu eklemek isterseniz:
+          // IconButton(
+          //   icon: Icon(Icons.notifications_none, color: Theme.of(context).colorScheme.onBackground),
+          //   onPressed: () { /* İşlev ekleyin */ },
+          // ),
         ],
       ),
     );
@@ -173,76 +227,110 @@ class _HomePageState extends State<HomePage> {
 
   /// Gösterge paneli kartları (tamamlanan görevler, performans, haftalık istekler)
   Widget _buildDashboardCards() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        //if (context.hasRole('user'))
-        BlocProvider(
-          create: (_) =>
-          HomeCubit(getIt<HomeUseCases>())..fetchStatusSummaries(),
-          child: BlocBuilder<HomeCubit, HomeState>(
-            builder: (context, state) {
-              if (state is SummariesLoading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (state is HomeSummariesLoaded) {
-                final summaries = state.summaries;
-                final total = summaries.fold<double>(0.0, (sum, item) => sum + item.value);
-                return CompletedTasksCard(
-                  statusItems: summaries.map((e) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<TaskCubit>(
+          create: (ctx) {
+            final cubit = TaskCubit(widget.taskUseCases);
+            cubit.getAllTaskList();
+            return cubit;
+          },
+        ),
+        BlocProvider<HomeCubit>(
+          create: (ctx) {
+            final taskCubit = ctx.read<TaskCubit>();
+            final homeCubit = HomeCubit(getIt<HomeUseCases>(), taskCubit);
+            taskCubit.stream.firstWhere((s) => s is TaskLoadSuccess).then((_) {
+              homeCubit.initialize();
+            });
+            return homeCubit;
+          },
+        ),
+      ],
+      child: BlocBuilder<HomeCubit, HomeState>(
+        builder: (context, state) {
+          if (state is HomeLoading || state is HomeInitial) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is HomeDataLoaded) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                StatusProgressCard(
+                  title: 'Görevler',
+                  statusItems: state.summaries.map((e) {
+                    final total = state.summaries
+                        .fold<double>(0.0, (sum, item) => sum + item.value);
+                    final percent = total > 0 ? e.value / total : 0.0;
+                    return StatusItemData(
+                        label: '${e.name} (${e.value.toInt()})',
+                        percent: percent,
+                        color: GorevDurumEnumExtension.fromName(e.name).color);
+                  }).toList(),
+                ),
+                AppSizes.gapH12,
+                StatusProgressCard(
+                  title: 'Faaliyetler',
+                  statusItems: state.faliyetSummaries.map((e) {
+                    final total = state.faliyetSummaries
+                        .fold<double>(0.0, (sum, item) => sum + item.value);
                     final percent = total > 0 ? e.value / total : 0.0;
                     return StatusItemData(
                       label: '${e.name} (${e.value.toInt()})',
                       percent: percent,
-                      color: _statusColorForLabel(e.name),
+                      color: GorevDurumEnumExtension.fromName(e.name).color,
                     );
                   }).toList(),
-                );
-              } else if (state is HomeError) {
-                return Center(child: Text('Yüklenemedi: ${state.message}'));
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        ),
-        AppSizes.gapH16,
-        // if (isAdmin)
-        //   ProjectPerformanceCard(
-        //     performanceData: [
-        //       ProjectPerformanceData(
-        //           label: 'Proj 1', percent: 80, color: Colors.blue),
-        //       ProjectPerformanceData(
-        //           label: 'Proj 2', percent: 55, color: Colors.orange),
-        //       ProjectPerformanceData(
-        //           label: 'Proj 3', percent: 60, color: Colors.green),
-        //       ProjectPerformanceData(
-        //           label: 'Proj 4', percent: 45, color: Colors.blueGrey),
-        //       ProjectPerformanceData(
-        //           label: 'Proj 5', percent: 89, color: Colors.redAccent),
-        //       ProjectPerformanceData(
-        //           label: 'Proj 6', percent: 96, color: Colors.teal),
-        //     ],
-        //   ),
-        // AppSizes.gapH16,
-        // if (isAdmin)
-        //   WeeklyRequestChartCard(
-        //     weeklyData: const [8, 10, 14, 15, 13, 10, 9],
-        //     labels: const ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
-        //   ),
-
-        BlocProvider(
-          create: (_) {
-            final request = TaskListRequestModel(
-                gorevId: 0,
-                kullaniciId: AppPreferences.kullaniciId ?? 0,
-                durumId: 0,
-                baslangicTarihi: "2025-01-01T00:00:00",
-                baslangicTarihi1: "");
-
-            return TaskCubit(getIt<TaskUseCases>())..fetchLastTasks(request);
-          },
-          child: const LastTasksList(),
-        ),
-      ],
+                ),
+                AppSizes.gapH12,
+                // Bekleyen Görevler başlık vs...
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.task_alt,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 24.sp,
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Bekleyen Görevler',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
+                                  fontSize: (Theme.of(context)
+                                              .textTheme
+                                              .titleLarge
+                                              ?.fontSize ??
+                                          20) *
+                                      ScreenUtil().scaleText,
+                                ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Divider(color: Colors.grey.shade300, thickness: 1.w),
+                    ],
+                  ),
+                ),
+                // LastTasksList using state.tasks
+                LastTasksList(tasks: state.tasks),
+              ],
+            );
+          } else if (state is HomeError) {
+            return Center(child: Text('Yüklenemedi: ${state.message}'));
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 }

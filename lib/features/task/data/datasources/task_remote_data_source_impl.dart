@@ -1,3 +1,4 @@
+import 'package:project_management_app/core/constants/gorev_durum_enum.dart';
 import 'dart:convert';
 
 import 'package:project_management_app/core/network/base_remote_data_source.dart';
@@ -12,7 +13,7 @@ import 'task_remote_data_source.dart';
 class TaskRemoteDataSourceImpl extends BaseRemoteDataSource implements TaskRemoteDataSource {
   TaskRemoteDataSourceImpl(ApiService apiService) : super(apiService);
 
-  @override
+
   @override
   Future<List<TaskListItemModel>> getTaskList(TaskListRequestModel request) async {
     print('JSON gönderiliyor: ${jsonEncode(request.toJson())}');
@@ -31,7 +32,24 @@ class TaskRemoteDataSourceImpl extends BaseRemoteDataSource implements TaskRemot
     print('Görev listesi döndü: ${result.length} kayıt');
     return result;
   }
+  @override
+  Future<List<TaskListItemModel>> getAllTaskList() async {
+    var result= await getList<TaskListItemModel>(
+      ApiEndpoints.getAllTaskList,
+          (json) => TaskListItemModel.fromJson(json),
+      customMsgs: {
+        400: 'Hatalı image sorgusu.',
+        404: 'Fotoğraflar bulunamadı.',
+        500: 'Sunucu hatası. Fotoğraflar alınamadı.',
+      },
+    );
+    var filtered = result
+        .where((task) => task.projeFazGorev != null && task.projeFazGorev!.durum != GorevDurumEnum.tamamlandi)
+        .toList();
 
+    print('Görev listesi döndü: ${result.toString()} kayıt');
+    return filtered;
+  }
   @override
   Future<void> updateTask(TaskRequestModel task) {
     print('TASK UPDATE: ${jsonEncode(task.toJson())}');
@@ -51,9 +69,12 @@ class TaskRemoteDataSourceImpl extends BaseRemoteDataSource implements TaskRemot
 
   @override
   Future<List<TaskListItemModel>> getLastTasks(TaskListRequestModel request, {int count = 10}) async {
-    // Fetch the full task list and return only the first `count` items
+
     final allTasks = await getTaskList(request);
-    return allTasks.take(count).toList();
+    return allTasks
+        .where((task) => task.projeFazGorev.durum != GorevDurumEnum.tamamlandi)
+        .take(count)
+        .toList();
   }
 
 

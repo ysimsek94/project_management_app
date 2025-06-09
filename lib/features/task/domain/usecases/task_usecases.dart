@@ -17,7 +17,9 @@ class TaskUseCases {
     return await repository.getTaskList(taskListRequestModel);
   }
 
-
+  Future<List<TaskListItemModel>> getAllTaskList() async {
+    return await repository.getAllTaskList();
+  }
 
   Future<void> updateTask(TaskRequestModel task) async {
     return await repository.updateTask(task);

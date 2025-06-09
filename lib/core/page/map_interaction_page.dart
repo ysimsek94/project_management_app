@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
-import 'package:project_management_app/core/constants/app_sizes.dart';
 import '../widgets/app_custom_app_bar.dart';
 import '../widgets/app_map_selector.dart';
 
@@ -60,13 +60,13 @@ class _MapInteractionPageState extends State<MapInteractionPage> {
         onBack: () => Navigator.of(context).pop<LatLng?>(null),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.w),
         child: Column(
           children: [
             // Harita bileşenini içeren genişletilebilir alan
             Expanded(
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.r),
                 child: MapSelector(
                   initialLocation: widget.initialLocation,
                   initialPoints: widget.initialPoints,
@@ -76,14 +76,14 @@ class _MapInteractionPageState extends State<MapInteractionPage> {
                 ),
               ),
             ),
-            AppSizes.gapH16,
+            SizedBox(height: 16.h),
             // Kullanıcı seçimini onaylayarak üst bileşene ileten buton
             AppButton(
               width: double.infinity,
               title: "Konumu Kaydet",
               onClick: _submit,
             ),
-            AppSizes.gapH24,
+            SizedBox(height: 24.h),
           ],
         ),
       ),

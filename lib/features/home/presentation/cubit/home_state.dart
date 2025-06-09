@@ -1,28 +1,27 @@
 part of 'home_cubit.dart';
 
-abstract class HomeState {}
-
-class HomeInitial extends HomeState {}
-
-/// Dashboard görevleri yükleniyor
-class DashboardLoading extends HomeState {}
-
-/// Dashboard görevleri yüklendi
-class HomeTasksLoaded extends HomeState {
-  final List<DashboardTaskModel> tasks;
-  HomeTasksLoaded(this.tasks);
+abstract class HomeState {
+  const HomeState();
 }
 
-/// Durum özetleri yükleniyor
-class SummariesLoading extends HomeState {}
+class HomeInitial extends HomeState {
+  const HomeInitial();
+}
 
-/// Durum özetleri yüklendi
-class HomeSummariesLoaded extends HomeState {
+/// Tüm veriler yüklenirken gösterilecek durum
+class HomeLoading extends HomeState {
+  const HomeLoading();
+}
+
+/// Dashboard görevleri, durum özetleri ve faaliyet özetleri yüklendi
+class HomeDataLoaded extends HomeState {
+  final List<TaskListItemModel> tasks;
   final List<StatusSummaryModel> summaries;
-  HomeSummariesLoaded(this.summaries);
+  final List<StatusSummaryModel> faliyetSummaries;
+  const HomeDataLoaded(this.tasks, this.summaries,this.faliyetSummaries);
 }
 
 class HomeError extends HomeState {
   final String message;
-  HomeError(this.message);
+  const HomeError(this.message);
 }

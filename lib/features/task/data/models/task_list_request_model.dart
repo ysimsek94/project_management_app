@@ -1,6 +1,6 @@
-
-
 import 'package:json_annotation/json_annotation.dart';
+
+import '../../../../core/constants/gorev_durum_enum.dart';
 
 part 'task_list_request_model.g.dart';
 
@@ -8,26 +8,22 @@ part 'task_list_request_model.g.dart';
 class TaskListRequestModel {
   final int gorevId;
   final int kullaniciId;
-  final int durumId;
-  final String baslangicTarihi;
-  final String baslangicTarihi1;
+  @JsonKey(name: 'durumId', fromJson: GorevDurumEnumHelper.fromId, toJson: _gorevDurumToJson)
+  final GorevDurumEnum durum;
+  final String? baslangicTarihi;
+  final String? baslangicTarihi1;
 
   TaskListRequestModel({
     required this.gorevId,
     required this.kullaniciId,
-    required this.durumId,
+    required this.durum,
     required this.baslangicTarihi,
-    required this.baslangicTarihi1,
+    this.baslangicTarihi1,
   });
 
   factory TaskListRequestModel.fromJson(Map<String, dynamic> json) =>
       _$TaskListRequestModelFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-    'gorevId': gorevId,
-    'kullaniciId': kullaniciId,
-    'durumId': durumId,
-    'baslangicTarihi': baslangicTarihi,
-    'baslangicTarihi1': baslangicTarihi1.isNotEmpty ? baslangicTarihi1 : null,
-  };
+  Map<String, dynamic> toJson() => _$TaskListRequestModelToJson(this);
 }
+int _gorevDurumToJson(GorevDurumEnum durum) => durum.id;

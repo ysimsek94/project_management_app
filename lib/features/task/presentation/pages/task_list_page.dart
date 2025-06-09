@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
-import 'package:project_management_app/core/extensions/role_extensions.dart';
-import 'package:project_management_app/core/preferences/AppPreferences.dart';
+
 import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_add_page.dart';
-import '../../data/models/task_list_item_model.dart';
-import '../../data/models/task_request_model.dart';
+
 import '../widgets/task_list_view.dart';
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../widgets/date_picker_section.dart';
 
@@ -57,7 +55,7 @@ class _TaskListPageState extends State<TaskListPage> {
           showBackButton: false,
         ),
         body: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -70,71 +68,94 @@ class _TaskListPageState extends State<TaskListPage> {
                     children: [
                       Text(
                         "${_selectedDate.monthName}, ${_selectedDate.day}",
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
-                      if (context.hasRole('admin'))
-                        AppButton(
-                          title: "+ Add Task",
-                          onClick: () {
-                            final cubit = _taskCubit;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => BlocProvider.value(
-                                  value: _taskCubit,
-                                  child: const TaskAddPage(),
-                                ),
-                              ),
-                            ).then((value) {
-                              if (value == true) {
-                                cubit.getTaskList(_selectedDate.yMd);
-                              }
-                            });
-                          },
-                          minWidth: 45,
-                          height: 35,
+                        style: TextStyle(
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              Theme.of(context).textTheme.titleLarge?.color ??
+                                  Colors.black87,
                         ),
+                      ),
+                      // if (context.hasRole('admin'))
+                      //   AppButton(
+                      //     title: "+ Add Task",
+                      //     onClick: () {
+                      //       final cubit = _taskCubit;
+                      //       Navigator.push(
+                      //         context,
+                      //         MaterialPageRoute(
+                      //           builder: (_) => BlocProvider.value(
+                      //             value: _taskCubit,
+                      //             child: const TaskAddPage(),
+                      //           ),
+                      //         ),
+                      //       ).then((value) {
+                      //         if (value == true) {
+                      //           cubit.getTaskList(_selectedDate.yMd);
+                      //         }
+                      //       });
+                      //     },
+                      //     minWidth: 45.w,
+                      //     height: 35.h,
+                      //   ),
                     ],
                   ),
-                  AppSizes.gapH12,
-                  SizedBox(
-                    height: 100,
-                    child: DatePickerSection(
-                      currentDate: _selectedDate,
-                      onDateSelected: (date) {
-                        setState(() => _selectedDate = date);
-                        _taskCubit.getTaskList(date.yMd);
-                      },
-                    ),
+                  SizedBox(height: 12.h),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      DatePickerSection(
+                        currentDate: _selectedDate,
+                        onDateSelected: (date) {
+                          setState(() {
+                            _selectedDate = date;
+                            _taskCubit.getTaskList(date.yMd);
+                          }
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.h),
                   Row(
                     children: [
                       Icon(Icons.calendar_today,
-                          color: Theme.of(context).primaryColor, size: 18),
-                      AppSizes.gapH8,
-                      const Text("Tüm Görevler - ",
-                          style: TextStyle(fontSize: 14)),
+                          color: Theme.of(context).primaryColor, size: 18.sp),
+                      SizedBox(width: 8.w),
+                      Text("Tüm Görevler - ",
+                          style: TextStyle(fontSize: 14.sp)),
                       Text(
                         _selectedDate.dMy,
                         style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             color: Theme.of(context).primaryColor),
                       ),
                     ],
                   ),
-                  AppSizes.gapH16,
-                  AppTextField(
-                    hint: 'Görev ara...',
-                    prefixIcon: Icons.search,
-                    borderRadius: 12,
-                    textEditingController: _searchController,
-                    onChange: (value) {
-                      _taskCubit.search(value);
+                  SizedBox(height: 16.h),
+                  AnimatedBuilder(
+                    animation: _searchController,
+                    builder: (context, child) {
+                      final hasText = _searchController.text.isNotEmpty;
+                      return AppTextField(
+                        hint: 'Görev ara...',
+                        prefixIcon: Icons.search,
+                        suffixIcon: hasText ? Icons.clear : null,
+                        borderRadius: 12,
+                        textEditingController: _searchController,
+                        onChange: (value) {
+                          _taskCubit.search(value);
+                        },
+                        onSuffixIconTap: hasText
+                            ? () {
+                                _searchController.clear();
+                                _taskCubit.search('');
+                              }
+                            : null,
+                      );
                     },
                   ),
-                  AppSizes.gapH16,
+                  SizedBox(height: 16.h),
                 ],
               ),
               // Expandable widget
@@ -146,10 +167,11 @@ class _TaskListPageState extends State<TaskListPage> {
                     } else if (state is TaskLoadSuccess) {
                       final tasks = state.tasks;
                       if (tasks.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Text(
                             "Görev bulunamadı",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            style:
+                                TextStyle(fontSize: 16.sp, color: Colors.grey),
                           ),
                         );
                       }
@@ -186,7 +208,10 @@ class _TaskListPageState extends State<TaskListPage> {
                             ElevatedButton(
                               onPressed: () =>
                                   _taskCubit.getTaskList(_selectedDate.dMy),
-                              child: const Text("Tekrar Dene"),
+                              child: Text(
+                                "Tekrar Dene",
+                                style: TextStyle(fontSize: 14.sp),
+                              ),
                             ),
                           ],
                         ),

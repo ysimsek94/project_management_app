@@ -5,6 +5,7 @@ import '../models/task_request_model.dart';
 
 abstract class TaskRemoteDataSource {
   Future<List<TaskListItemModel>> getTaskList(TaskListRequestModel taskListRequestModel);
+  Future<List<TaskListItemModel>> getAllTaskList();
   Future<void> updateTask(TaskRequestModel task);
   Future<List<TaskListItemModel>> getLastTasks(TaskListRequestModel taskListRequestModel ,{int count = 10});
 }

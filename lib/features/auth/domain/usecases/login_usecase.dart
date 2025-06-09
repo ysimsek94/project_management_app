@@ -1,6 +1,5 @@
 import 'package:project_management_app/features/auth/data/models/login_response_model.dart';
 
-import '../entities/user.dart';
 import '../repositories/auth_repository.dart';
 
 class LoginUseCase {

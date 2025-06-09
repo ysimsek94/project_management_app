@@ -395,8 +395,16 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
-  flutter_localizations:
+  flutter_localization:
     dependency: "direct main"
+    description:
+      name: flutter_localization
+      sha256: "987faf0a6c13a267202b28d3ed680647e234245ead1a1c1f95f87e86c6f12490"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  flutter_localizations:
+    dependency: transitive
     description: flutter
     source: sdk
     version: "0.0.0"
@@ -1295,6 +1303,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
+  universal_io:
+    dependency: transitive
+    description:
+      name: universal_io
+      sha256: "1722b2dcc462b4b2f3ee7d188dad008b6eb4c40bbd03a3de451d82c78bba9aad"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.2"
   url_launcher:
     dependency: "direct main"
     description:
@@ -1439,6 +1455,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
+  week_of_year:
+    dependency: transitive
+    description:
+      name: week_of_year
+      sha256: "578d2a9c7d93264b363ff3b1789e1acbae42295e803e70d362cfa07fcb73d3d1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
+  weekly_date_picker:
+    dependency: "direct main"
+    description:
+      name: weekly_date_picker
+      sha256: "36abd634c828b9c061b54fc7c82f608217a1ace250eb0d2640308c010151ea0c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.2"
   win32:
     dependency: transitive
     description:

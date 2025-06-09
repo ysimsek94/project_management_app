@@ -19,7 +19,7 @@ TaskRequestModel _$TaskRequestModelFromJson(Map<String, dynamic> json) =>
       fizikiYuzde: (json['fizikiYuzde'] as num?)?.toDouble() ?? 0.0,
       gerceklesmeYuzde: (json['gerceklesmeYuzde'] as num?)?.toDouble() ?? 0.0,
       tamamlanmaTarihi: json['tamamlanmaTarihi'] as String? ?? '',
-      durumId: (json['durumId'] as num?)?.toInt() ?? 0,
+      durum: GorevDurumEnumHelper.fromId((json['durumId'] as num).toInt()),
       geom: json['geom'] as Map<String, dynamic>?,
     );
 
@@ -36,6 +36,6 @@ Map<String, dynamic> _$TaskRequestModelToJson(TaskRequestModel instance) =>
       'fizikiYuzde': instance.fizikiYuzde,
       'gerceklesmeYuzde': instance.gerceklesmeYuzde,
       'tamamlanmaTarihi': instance.tamamlanmaTarihi,
-      'durumId': instance.durumId,
+      'durumId': _gorevDurumToJson(instance.durum),
       if (instance.geom case final value?) 'geom': value,
     };

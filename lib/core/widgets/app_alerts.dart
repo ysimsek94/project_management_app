@@ -66,16 +66,37 @@ class AppAlerts {
       barrierDismissible: barrierDismissible,
       builder: (context) {
         return AlertDialog(
-          title: Text(title),
-          content: description != null ? Text(description) : null,
+          insetPadding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+          title: Text(
+            title,
+            style: TextStyle(fontSize: 18.sp),
+          ),
+          content: description != null
+              ? Text(
+                  description,
+                  style: TextStyle(fontSize: 14.sp),
+                )
+              : null,
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text(cancelText),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                child: Text(
+                  cancelText,
+                  style: TextStyle(fontSize: 14.sp),
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text(confirmText),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                child: Text(
+                  confirmText,
+                  style: TextStyle(fontSize: 14.sp, color: Colors.white),
+                ),
+              ),
             ),
           ],
         );

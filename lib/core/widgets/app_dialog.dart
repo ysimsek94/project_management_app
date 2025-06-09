@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_management_app/core/constants/app_sizes.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AppDialog {
   static Future<T?> showCustomDialog<T>({
@@ -16,40 +16,43 @@ class AppDialog {
           backgroundColor: Colors.transparent,
           elevation: 0,
           insetPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
           child: Center(
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24.w),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.onPrimary,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.r),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   CircleAvatar(
-                    radius: 24,
+                    radius: 24.r,
                     backgroundColor:
                         Theme.of(context).primaryColor.withOpacity(0.1),
-                    child: Icon(icon,
-                        size: 24, color: Theme.of(context).primaryColor),
+                    child: Icon(
+                      icon,
+                      size: 24.sp,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
-                  AppSizes.gapH16,
+                  SizedBox(height: 16.h),
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),
-                  AppSizes.gapH8,
+                  SizedBox(height: 8.h),
                   DefaultTextStyle(
                     style: Theme.of(context).textTheme.bodyMedium!,
                     textAlign: TextAlign.center
                     ,
                     child: content,
                   ),
-                  AppSizes.gapH24,
+                  SizedBox(height: 24.h),
                   Row(
                     children: actions,
                   ),

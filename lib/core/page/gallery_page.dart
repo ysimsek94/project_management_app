@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/core/services/photo_picker_service.dart';
 import 'package:project_management_app/core/services/photo_upload_service.dart';
 import 'package:project_management_app/injection.dart';
@@ -66,11 +67,11 @@ class _GalleryPageState extends State<GalleryPage> {
       body: _images.isEmpty
           ? const Center(child: Text('Henüz fotoğraf yok'))
           : GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              padding: EdgeInsets.all(12.w),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
+                mainAxisSpacing: 12.w,
+                crossAxisSpacing: 12.w,
               ),
               itemCount: _images.length,
               itemBuilder: (context, index) {
@@ -86,7 +87,7 @@ class _GalleryPageState extends State<GalleryPage> {
                           child: Material(
                             color: Colors.transparent,
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(16.r),
                               child: Image.file(
                                 _images[index],
                                 fit: BoxFit.contain,
@@ -107,7 +108,7 @@ class _GalleryPageState extends State<GalleryPage> {
                     );
                   },
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.r),
                     child: Image.file(
                       _images[index],
                       fit: BoxFit.cover,

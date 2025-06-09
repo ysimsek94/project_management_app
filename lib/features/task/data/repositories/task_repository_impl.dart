@@ -14,7 +14,11 @@ class TaskRepositoryImpl implements TaskRepository {
     var taskList = await remoteDataSource.getTaskList(request);
     return taskList;
   }
-
+  @override
+  Future<List<TaskListItemModel>> getAllTaskList() async {
+    var taskList = await remoteDataSource.getAllTaskList();
+    return taskList;
+  }
   @override
   Future<void> updateTask(TaskRequestModel task) {
     return remoteDataSource.updateTask(task);

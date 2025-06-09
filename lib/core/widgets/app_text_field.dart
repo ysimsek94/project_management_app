@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/core/extensions/theme_extensions.dart';
 
 class AppTextField extends StatelessWidget {
@@ -19,11 +20,13 @@ class AppTextField extends StatelessWidget {
   final Color? fillColor;
   final IconData? prefixIcon;
   final Color? prefixIconColor;
+  final Color? suffixIconColor;
   final double borderRadius;
   final EdgeInsetsGeometry contentPadding;
   final String? errorText;
   final String? initialValue;
   final TextInputAction? textInputAction;
+  final int? maxLines;
   const AppTextField({
     super.key,
     required this.hint,
@@ -44,19 +47,25 @@ class AppTextField extends StatelessWidget {
     this.fillColor,
     this.prefixIcon,
     this.prefixIconColor,
+    this.suffixIconColor,
     this.borderRadius = 8.0,
     this.contentPadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.errorText,
     this.initialValue,
+    this.maxLines,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final baseFill = readOnly
+        ? Colors.grey.shade200
+        : (fillColor ?? Colors.white);
+
     return TextFormField(
       readOnly: readOnly,
       textCapitalization: TextCapitalization.none,
-      maxLines: 1,
+      maxLines: maxLines ?? 1,
       maxLength: maxLength,
       keyboardType: keyboardType,
       controller: textEditingController,
@@ -64,15 +73,15 @@ class AppTextField extends StatelessWidget {
       onFieldSubmitted: onSubmit,
       onTapOutside: onTapOutside,
       obscureText: obscureText!,
-      onTap: readOnly ? onTap : null,
+      onTap: onTap,
       textInputAction: textInputAction,
       focusNode: focusNode,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey.shade500),
+        hintStyle: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
         filled: true,
-        fillColor: fillColor ?? Colors.grey.shade100,
-        contentPadding: contentPadding,
+        fillColor: baseFill,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         errorText: errorText,
         prefixIcon: prefixIcon == null
             ? null
@@ -86,34 +95,40 @@ class AppTextField extends StatelessWidget {
                 onTap: onSuffixIconTap,
                 child: Icon(
                   suffixIcon,
-                  color: theme.colorScheme.primary,
+                  color: suffixIconColor ?? theme.colorScheme.primary,
                 ),
               ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          borderSide: BorderSide(color: Colors.grey.shade400),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          borderSide: BorderSide(color: Colors.grey.shade400),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5.w),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: BorderRadius.circular(borderRadius.r),
           borderSide: BorderSide(color: theme.colorScheme.error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5.w),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(borderRadius.r),
+          borderSide: BorderSide(color: Colors.grey.shade400),
         ),
       ),
       autovalidateMode: AutovalidateMode.onUserInteraction,
       validator: validator,
-      style: theme.textTheme.bodyMedium,
-      cursorColor: context.theme.colorScheme.primary,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: readOnly ? Colors.grey.shade700 : Colors.black87,
+      ),
+      cursorColor: readOnly ? Colors.transparent : context.theme.colorScheme.primary,
       initialValue: initialValue,
     );
   }
