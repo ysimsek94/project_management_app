@@ -21,9 +21,11 @@ class AppButton extends StatelessWidget {
     this.borderRadius = 8,
     this.elevation = 0,
     this.padding,
+    this.borderColor,
   });
 
   final Color? color;
+  final Color? borderColor;
   final double? width;
   final double minWidth;
   final double height;
@@ -69,9 +71,10 @@ class AppButton extends StatelessWidget {
             padding: padding ?? EdgeInsets.symmetric(horizontal: 16.w),
             side: type == ButtonType.outlined
                 ? BorderSide(
-              color: isDisabled ? Colors.grey : primary,
-              width: 1.2.w,
-            )
+                    color: isDisabled ? Colors.grey : borderColor ?? primary,
+                    width: 2,
+                    style: BorderStyle.solid,
+                  )
                 : null,
             foregroundColor: isDisabled
                 ? Colors.grey
@@ -80,7 +83,7 @@ class AppButton extends StatelessWidget {
                 : Colors.white,
             backgroundColor: type == ButtonType.filled
                 ? (isDisabled ? Colors.grey[300] : primary)
-                : Colors.transparent,
+                : (color ?? Colors.transparent),
             elevation: elevation,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(borderRadius.r),

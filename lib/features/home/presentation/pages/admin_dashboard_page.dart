@@ -7,70 +7,105 @@ import '../cubit/admin_dashboard_state.dart';
 import '../../data/models/chart_dashboard_data.dart';
 import '../../data/models/proje_adet_model.dart';
 
-class AdminDashboardPage extends StatelessWidget {
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String text;
+  const _LegendItem({Key? key, required this.color, required this.text})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(text, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
+
+  @override
+  _AdminDashboardPageState createState() => _AdminDashboardPageState();
+}
+
+class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  int _touchedPieIndex = -1;
+  int _touchedDonutIndex = -1;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AdminDashboardCubit, AdminDashboardState>(
-      builder: (ctx, state) {
+      builder: (context, state) {
         if (state is AdminDashboardLoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is AdminDashboardError) {
           return Center(child: Text('Hata: ${state.message}'));
-        } else if (state is AdminDashboardLoaded) {
-          final projeStatus = state.projectStatusList;
-          final pieData = state.chartData.series;
-          final barData = state.activityByDept;
-          final donut = state.projectVsActivity;
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildStatusCards(projeStatus),
-                const SizedBox(height: 16),
-                _buildPieChart('Proje Tutar Dağılımı', pieData),
-                const SizedBox(height: 16),
-                _buildDonutChart('Proje vs Faaliyet Adet', donut),
-                // const SizedBox(height: 16),
-                // _buildBarChart('Departman Bazında Faaliyet Durumu', barData),
-              ],
-            ),
-          );
         }
-        return const SizedBox.shrink();
+
+        final projeStatus = (state as AdminDashboardLoaded).projectStatusList;
+        final pieData = state.chartData.series;
+        final donut = state.projectVsActivity;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildStatusCards(projeStatus),
+              const SizedBox(height: 16),
+              _buildPieChart('Proje Tutar Dağılımı', pieData),
+              const SizedBox(height: 16),
+              _buildDonutChart('Proje vs Faaliyet Adet', donut),
+            ],
+          ),
+        );
       },
     );
   }
 
   Widget _buildStatusCards(List<ProjeAdetModel> items) {
     return SizedBox(
-      height: 90, // adjust as needed
+      height: MediaQuery.of(context).size.height * 0.12,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 5),
+        separatorBuilder: (_, __) => const SizedBox(width: 16),
         itemBuilder: (ctx, i) {
           final it = items[i];
-          final toplamAdet = items.fold<int>(0, (sum, e) => sum + (e.adet ?? 0));
-          final yuzdeOrani = toplamAdet > 0 ? (((it.adet ?? 0) * 100.0) / toplamAdet) : 0;
+          final toplam = items.fold<int>(0, (sum, e) => sum + (e.adet ?? 0));
+          final pct = toplam > 0 ? ((it.adet ?? 0) * 100.0 / toplam) : 0;
           return SizedBox(
-            width: MediaQuery.of(ctx).size.width * 0.4,
+            width: MediaQuery.of(ctx).size.width * 0.45,
             child: Card(
               color: Theme.of(ctx).colorScheme.surface,
               elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       it.durumAdi,
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(ctx).colorScheme.onSurface,
-                          ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -81,10 +116,9 @@ class AdminDashboardPage extends StatelessWidget {
                         ),
                         const Spacer(),
                         Text(
-                          '${yuzdeOrani.toStringAsFixed(1)}%',
+                          '${pct.toStringAsFixed(1)}%',
                           style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(ctx).colorScheme.primary,
-                              ),
+                              color: Theme.of(ctx).colorScheme.primary),
                         ),
                       ],
                     ),
@@ -99,28 +133,68 @@ class AdminDashboardPage extends StatelessWidget {
   }
 
   Widget _buildPieChart(String title, List<PieData> data) {
-    final chartColors = [AppColors.primary, AppColors.primary, AppColors.secondary];
+    final colors = [
+      Theme.of(context).colorScheme.primary,
+      Theme.of(context).colorScheme.secondary,
+      AppColors.success,
+    ];
+
     return _ChartContainer(
       title: title,
-      child: SizedBox(
-        height: 175,
-        child: PieChart(
-          PieChartData(
-            sectionsSpace: 2,
-            centerSpaceRadius: 0,
-            sections: data.asMap().entries.map((e) {
-              final idx = e.key;
-              final d = e.value;
-              return PieChartSectionData(
-                value: d.value,
-                title: d.name,
-                radius: 60,
-                titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                color: chartColors[idx % chartColors.length],
-                // No shadow for minimal look
-              );
-            }).toList(),
-          ),
+      child: AspectRatio(
+        aspectRatio: 1.3,
+        child: Row(
+          children: [
+            Expanded(
+              child: PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, resp) {
+                      setState(() {
+                        _touchedPieIndex =
+                            resp?.touchedSection?.touchedSectionIndex ?? -1;
+                      });
+                    },
+                  ),
+                  borderData: FlBorderData(show: false),
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 40,
+                  sections: data.asMap().entries.map((e) {
+                    final idx = e.key;
+                    final d = e.value;
+                    final isTouched = idx == _touchedPieIndex;
+                    return PieChartSectionData(
+                      color: colors[idx % colors.length],
+                      value: d.value,
+                      title: d.name,
+                      radius: isTouched ? 60 : 50,
+                      titleStyle: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                              fontWeight: FontWeight.bold, color: Colors.white),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: data.asMap().entries.map((e) {
+                final idx = e.key;
+                final d = e.value;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: _LegendItem(
+                    color: colors[idx % colors.length],
+                    text: '${d.name} (${d.value.toInt()})',
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );
@@ -131,101 +205,71 @@ class AdminDashboardPage extends StatelessWidget {
       PieData(name: 'Proje', value: donut.proje.toDouble()),
       PieData(name: 'Faaliyet', value: donut.faaliyet.toDouble()),
     ];
-    final chartColors = [AppColors.primary, AppColors.success, AppColors.secondary];
+    final colors = [
+      Theme.of(context).colorScheme.primary,
+      AppColors.success,
+    ];
+
     return _ChartContainer(
       title: title,
-      child: SizedBox(
-        height: 175,
-        child: PieChart(
-          PieChartData(
-            sectionsSpace: 4,
-            centerSpaceRadius: 40,
-            sections: segments.asMap().entries.map((e) {
-              final idx = e.key;
-              final d = e.value;
-              return PieChartSectionData(
-                value: d.value,
-                title: '${d.value.toInt()}',
-                radius: 50,
-                titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                color: chartColors[idx % chartColors.length],
-                // No shadow for minimal look
-              );
-            }).toList(),
-          ),
+      child: AspectRatio(
+        aspectRatio: 1.3,
+        child: Row(
+          children: [
+            Expanded(
+              child: PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, resp) {
+                      setState(() {
+                        _touchedDonutIndex =
+                            resp?.touchedSection?.touchedSectionIndex ?? -1;
+                      });
+                    },
+                  ),
+                  borderData: FlBorderData(show: false),
+                  sectionsSpace: 4,
+                  centerSpaceRadius: 40,
+                  sections: segments.asMap().entries.map((e) {
+                    final idx = e.key;
+                    final d = e.value;
+                    final isTouched = idx == _touchedDonutIndex;
+                    return PieChartSectionData(
+                      color: colors[idx],
+                      value: d.value,
+                      title: '${d.value.toInt()}%',
+                      radius: isTouched ? 60 : 50,
+                      titleStyle:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: segments.asMap().entries.map((e) {
+                final idx = e.key;
+                final d = e.value;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: _LegendItem(
+                    color: colors[idx],
+                    text: '${d.name} (${d.value.toInt()})',
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  // Widget _buildBarChart(String title, List<FaliyetLine> data) {
-  //   final grouped = <String, Map<String, int>>{};
-  //   for (var item in data) {
-  //     final dept = item.departmanAdi;
-  //     final tamamlandi = item. == true ? 1 : 0;
-  //     final tamamlanmadi = item.faliyet.tamamlandi == false ? 1 : 0;
-  //
-  //     grouped.update(dept, (current) {
-  //       return {
-  //         'tamamlandi': current['tamamlandi']! + tamamlandi,
-  //         'tamamlanmadi': current['tamamlanmadi']! + tamamlanmadi,
-  //       };
-  //     }, ifAbsent: () {
-  //       return {
-  //         'tamamlandi': tamamlandi,
-  //         'tamamlanmadi': tamamlanmadi,
-  //       };
-  //     });
-  //   }
-  //
-  //   final departments = grouped.keys.toList();
-  //   return _ChartContainer(
-  //     title: title,
-  //     child: SizedBox(
-  //       height: 240,
-  //       child: BarChart(
-  //         BarChartData(
-  //           barGroups: grouped.entries.toList().asMap().entries.map((entry) {
-  //             final i = entry.key;
-  //             final e = entry.value;
-  //             return BarChartGroupData(
-  //               x: i,
-  //               barsSpace: 4,
-  //               barRods: [
-  //                 BarChartRodData(toY: e.value['tamamlandi']!.toDouble(), width: 8),
-  //                 BarChartRodData(toY: e.value['tamamlanmadi']!.toDouble(), width: 8),
-  //               ],
-  //             );
-  //           }).toList(),
-  //           titlesData: FlTitlesData(
-  //             bottomTitles: AxisTitles(
-  //               sideTitles: SideTitles(
-  //                 showTitles: true,
-  //                 getTitlesWidget: (value, meta) {
-  //                   final idx = value.toInt();
-  //                   if (idx < 0 || idx >= departments.length) return const SizedBox();
-  //                   return SideTitleWidget(
-  //                     axisSide: meta.axisSide,
-  //                     child: Text(
-  //                       departments[idx],
-  //                       style: const TextStyle(fontSize: 10),
-  //                     ),
-  //                   );
-  //                 },
-  //               ),
-  //             ),
-  //             leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-  //             rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-  //             topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-  //           ),
-  //           gridData: FlGridData(show: false),
-  //           borderData: FlBorderData(show: false),
-  //           alignment: BarChartAlignment.spaceAround,
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 }
 
 class _ChartContainer extends StatelessWidget {
@@ -235,29 +279,25 @@ class _ChartContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return Card(
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          )),
-          const SizedBox(height: 8),
-          child,
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    )),
+
+            child,
+          ],
+        ),
       ),
     );
   }
