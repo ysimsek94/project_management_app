@@ -19,7 +19,7 @@ class _GalleryPageState extends State<GalleryPage> {
   final List<File> _images = [];
 
   Future<void> _pickImageFromGallery() async {
-    final image = await PhotoPickerService.pickImage(fromCamera: false);
+    final image = await PhotoPickerService.pickImage(fromCamera: false,context: context);
     if (image != null) {
       setState(() {
         _images.add(image);
@@ -31,7 +31,7 @@ class _GalleryPageState extends State<GalleryPage> {
   }
 
   Future<void> _takePhoto() async {
-    final image = await PhotoPickerService.pickImage(fromCamera: true);
+    final image = await PhotoPickerService.pickImage(fromCamera: true,context: context);
     if (image != null) {
       setState(() {
         _images.add(image);

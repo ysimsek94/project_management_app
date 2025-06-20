@@ -33,6 +33,10 @@ import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/domain/usecases/home_usecases.dart';
 import 'features/home/presentation/cubit/admin_dashboard_cubit.dart';
 import 'features/home/presentation/cubit/home_cubit.dart';
+import 'features/map/data/repositories/map_repository_impl.dart';
+import 'features/map/domain/repositories/map_repository.dart';
+import 'features/map/domain/usecases/map_usecases.dart';
+import 'features/map/presentation/cubit/map_cubit.dart';
 import 'features/profile/domain/usecases/profile_usecases.dart';
 import 'package:project_management_app/features/auth/domain/usecases/login_usecase.dart';
 import 'package:project_management_app/features/auth/presentation/bloc/login_cubit.dart';
@@ -59,7 +63,7 @@ void configureDependencies() {
   );
   // Core network and API services
   getIt.registerLazySingleton<ApiService>(
-    () => ApiService(getIt<Dio>(),baseUrl: "http://10.100.8.60:8051/api/"),
+    () => ApiService(getIt<Dio>(), baseUrl: "http://10.100.8.60:8051/api/"),
   );
 
   // ===== Profile Feature =====
@@ -127,67 +131,77 @@ void configureDependencies() {
 
   // ===== Home Feature =====
   getIt.registerLazySingleton<HomeRemoteDataSource>(
-        () => HomeRemoteDataSourceImpl(getIt<ApiService>()),
+    () => HomeRemoteDataSourceImpl(getIt<ApiService>()),
   );
   getIt.registerLazySingleton<HomeRepository>(
-        () => HomeRepositoryImpl(getIt<HomeRemoteDataSource>()),
+    () => HomeRepositoryImpl(getIt<HomeRemoteDataSource>()),
   );
   getIt.registerLazySingleton<HomeUseCases>(
-        () => HomeUseCases(getIt<HomeRepository>()),
+    () => HomeUseCases(getIt<HomeRepository>()),
   );
   getIt.registerFactory<HomeCubit>(
-        () => HomeCubit(getIt<HomeUseCases>(),getIt<TaskCubit>()),
+    () => HomeCubit(getIt<HomeUseCases>(), getIt<TaskCubit>()),
   );
   // ===== AdminDashboard Feature =====
   getIt.registerLazySingleton<AdminDashboardRemoteDataSource>(
-        () => AdminDashboardRemoteDataSourceImpl(getIt<ApiService>()),
+    () => AdminDashboardRemoteDataSourceImpl(getIt<ApiService>()),
   );
   getIt.registerLazySingleton<AdminDashboardRepository>(
-        () => AdminDashboardRepositoryImpl(getIt<AdminDashboardRemoteDataSource>()),
+    () => AdminDashboardRepositoryImpl(getIt<AdminDashboardRemoteDataSource>()),
   );
   getIt.registerLazySingleton<AdminDashboardDataUseCases>(
-        () => AdminDashboardDataUseCases(getIt<AdminDashboardRepository>()),
+    () => AdminDashboardDataUseCases(getIt<AdminDashboardRepository>()),
   );
   getIt.registerFactory<AdminDashboardCubit>(
-        () => AdminDashboardCubit(getIt<AdminDashboardDataUseCases>()),
+    () => AdminDashboardCubit(getIt<AdminDashboardDataUseCases>()),
   );
 
   // ===== Activity Feature =====
   getIt.registerLazySingleton<ActivityRemoteDataSource>(
-        () => ActivityRemoteDataSourceImpl(getIt<ApiService>()),
+    () => ActivityRemoteDataSourceImpl(getIt<ApiService>()),
   );
   getIt.registerLazySingleton<ActivityRepository>(
-        () => ActivityRepositoryImpl(getIt<ActivityRemoteDataSource>()),
+    () => ActivityRepositoryImpl(getIt<ActivityRemoteDataSource>()),
   );
   getIt.registerLazySingleton<ActivityUseCases>(
-        () => ActivityUseCases(getIt<ActivityRepository>()),
+    () => ActivityUseCases(getIt<ActivityRepository>()),
   );
   getIt.registerFactory<ActivityCubit>(
-        () => ActivityCubit(getIt<ActivityUseCases>()),
+    () => ActivityCubit(getIt<ActivityUseCases>()),
   );
 
   // ===== ActivityPhoto Feature =====
   getIt.registerLazySingleton<ActivityPhotoRemoteDataSource>(
-        () => ActivityPhotoRemoteDataSourceImpl(getIt<ApiService>()),
+    () => ActivityPhotoRemoteDataSourceImpl(getIt<ApiService>()),
   );
   getIt.registerLazySingleton<ActivityPhotoRepository>(
-        () => ActivityPhotoRepositoryImpl(getIt<ActivityPhotoRemoteDataSource>()),
+    () => ActivityPhotoRepositoryImpl(getIt<ActivityPhotoRemoteDataSource>()),
   );
   getIt.registerLazySingleton<GetActivityPhotosUseCase>(
-        () => GetActivityPhotosUseCase(getIt<ActivityPhotoRepository>()),
+    () => GetActivityPhotosUseCase(getIt<ActivityPhotoRepository>()),
   );
   getIt.registerLazySingleton<UploadActivityPhotoUseCase>(
-        () => UploadActivityPhotoUseCase(getIt<ActivityPhotoRepository>()),
+    () => UploadActivityPhotoUseCase(getIt<ActivityPhotoRepository>()),
   );
   getIt.registerLazySingleton<DeleteActivityPhotoUseCase>(
-        () => DeleteActivityPhotoUseCase(getIt<ActivityPhotoRepository>()),
+    () => DeleteActivityPhotoUseCase(getIt<ActivityPhotoRepository>()),
   );
   getIt.registerFactory<ActivityPhotoCubit>(
-        () => ActivityPhotoCubit(
+    () => ActivityPhotoCubit(
       getIt<GetActivityPhotosUseCase>(),
       getIt<UploadActivityPhotoUseCase>(),
       getIt<DeleteActivityPhotoUseCase>(),
     ),
   );
 
+  // ===== Map Feature =====
+  getIt.registerLazySingleton<MapRepository>(
+    () => MapRepositoryImpl(remoteDataSource: getIt<TaskRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<MapUseCases>(
+    () => MapUseCases(mapRepository: getIt<MapRepository>()),
+  );
+  getIt.registerFactory<MapCubit>(
+    () => MapCubit(getIt<MapUseCases>()),
+  );
 }

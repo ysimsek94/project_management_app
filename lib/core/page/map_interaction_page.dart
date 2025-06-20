@@ -80,7 +80,7 @@ class _MapInteractionPageState extends State<MapInteractionPage> {
             // Kullanıcı seçimini onaylayarak üst bileşene ileten buton
             AppButton(
               width: double.infinity,
-              title: "Konumu Kaydet",
+              title: "Konumu Onayla",
               onClick: _submit,
             ),
             SizedBox(height: 24.h),

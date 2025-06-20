@@ -7,13 +7,13 @@ import 'package:project_management_app/features/home/domain/usecases/admin_dashb
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_list_page.dart';
 import 'package:project_management_app/injection.dart';
+import '../../../../core/page/base_page.dart';
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../activity/domain/usecases/activity_usecases.dart';
 import '../../../activity/presentation/bloc/activity_cubit.dart';
 import '../../../activity/presentation/pages/activity_list_page.dart';
-import '../../../profile/domain/usecases/profile_usecases.dart';
-import '../../../profile/presentation/bloc/profile_cubit.dart';
-import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../map/presentation/pages/map_page.dart';
+import 'package:project_management_app/features/map/presentation/cubit/map_cubit.dart';
 import '../../../task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
@@ -48,6 +48,7 @@ class _HomePageState extends State<HomePage> {
   /// Sayfa içeriği ve alt menülerin yönetimi
   @override
   Widget build(BuildContext context) {
+
     // Alt sekme sayfalarını ve menü öğelerini birlikte oluştur (senkronizasyon için)
     final List<Map<String, dynamic>> navConfig = [
       {
@@ -81,23 +82,24 @@ class _HomePageState extends State<HomePage> {
           label: 'Faliyetler',
         ),
       },
-      {
+      if (isAdmin) {
         'page': BlocProvider(
-          create: (_) => ProfileCubit(getIt<ProfileUseCase>()),
-          child: const ProfilePage(),
+          create: (_) => getIt<MapCubit>()..loadTasks(),
+          child: const TaskMapPage(),
         ),
         'item': const AppBottomNavBarItem(
-          icon: Icons.person,
-          label: 'Profil',
+          icon: Icons.map,
+          label: 'Harita',
         ),
-      }
+      },
     ];
 
     final List<AppBottomNavBarItem> items = navConfig
         .map<AppBottomNavBarItem>((e) => e['item'] as AppBottomNavBarItem)
         .toList();
 
-    List<Widget> pages = navConfig.map<Widget>((e) => e['page'] as Widget).toList();
+    List<Widget> pages =
+        navConfig.map<Widget>((e) => e['page'] as Widget).toList();
     if (isAdmin) {
       pages[0] = BlocProvider(
         create: (_) => AdminDashboardCubit(getIt<AdminDashboardDataUseCases>())..loadAll(),

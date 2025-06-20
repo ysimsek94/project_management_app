@@ -32,7 +32,7 @@ class MapSelector extends StatefulWidget {
     this.initialPoints,
     required this.mode,
     required this.onPointsChanged,
-    this.autoInitLocation = true,
+      this.autoInitLocation = true,
     this.enableSearch = false,
   }) : super(key: key);
 
@@ -52,17 +52,22 @@ class _MapSelectorState extends State<MapSelector> {
     super.initState();
     _searchController = TextEditingController();
 
-    // Gelen initialPoints varsa onları kullan, yoksa initialLocation varsa onu kullan
+    /// Arama denetleyicisini, mevcut noktaları ve otomatik konum almayı başlatır.
+    /// Eğer başlangıç noktaları varsa üst bileşene bildirir; yoksa cihaz konumunu ister.
     _points = widget.initialPoints ??
         (widget.initialLocation != null ? [widget.initialLocation!] : []);
 
-    // Sadece hiçbir konum verisi yoksa ve autoInitLocation açıksa cihaz konumunu al
-    if (_points.isEmpty && widget.autoInitLocation) {
+    if (_points.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onPointsChanged(_points);
+      });
+    } else if (widget.autoInitLocation) {
       _handlePermissionsAndInit();
     }
   }
 
-  /// Requests location permission and service, then sets initial point.
+  /// Konum servisini ve izinlerini kontrol eder, cihazın güncel konumunu alır,
+  /// `_points` listesini günceller, üst bileşeni bilgilendirir ve haritayı merkezler.
   Future<void> _handlePermissionsAndInit() async {
     // Service check
     if (!await Geolocator.isLocationServiceEnabled()) {
@@ -104,6 +109,8 @@ class _MapSelectorState extends State<MapSelector> {
     }
   }
 
+  /// Verilen adresi geokodlar, `_points` listesini günceller, üst bileşeni bilgilendirir
+  /// ve haritayı bulunan konuma merkezler.
   Future<void> _searchAndCenter(String address) async {
     try {
       final results = await geocoding.locationFromAddress(address);
@@ -124,6 +131,7 @@ class _MapSelectorState extends State<MapSelector> {
     }
   }
 
+  /// OpenStreetMap Nominatim API'den adres önerileri alır.
   Future<List<String>> _getAddressSuggestions(String query) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=$query'
@@ -137,6 +145,8 @@ class _MapSelectorState extends State<MapSelector> {
     }
   }
 
+  /// Harita tıklama olaylarını işler: moda göre noktaları ekler veya değiştirir,
+  /// üst bileşeni bilgilendirir ve harita odağını günceller.
   void _handleTap(LatLng point) {
     setState(() {
       switch (widget.mode) {
@@ -155,18 +165,22 @@ class _MapSelectorState extends State<MapSelector> {
 
     widget.onPointsChanged(_points);
     if (_points.isNotEmpty) {
-      _mapController.move(_points.first, _mapController.zoom);
+      final focusPoint = (widget.mode == MapInteractionMode.selectMultiple || widget.mode == MapInteractionMode.drawPolyline)
+          ? _points.last
+          : _points.first;
+      _mapController.move(focusPoint, _mapController.zoom);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final center = _points.isNotEmpty ? _points.first : LatLng(41.015137, 28.979530);
+
+    // Arama etkinleştirilmişse, önerili bir adres arama girişi gösterir.
     return Column(
       children: [
         if (widget.enableSearch)
           Padding(
-            padding: EdgeInsets.all(8.w),
+            padding: EdgeInsets.symmetric(vertical: 3.w ,horizontal: 1.w),
             child: TypeAheadField<String>(
               // Build the TextField
               builder: (context, TextEditingController controller, FocusNode focusNode) {
@@ -210,19 +224,30 @@ class _MapSelectorState extends State<MapSelector> {
               hideOnEmpty: true,
             ),
           ),
+        // Ana harita kapsayıcısı: OpenStreetMap katmanlarını gösterir ve kullanıcı etkileşimini yönetir.
         Expanded(
           child: FlutterMap(
             mapController: _mapController,
-            options: MapOptions(
-              center: center,
-              zoom: 15.0,
-              onTap: (tapPosition, point) => _handleTap(point),
-            ),
+            // Eğer `_points` listesi boş değilse, haritayı seçilen noktalara sığdır
+            options: _points.isNotEmpty
+                ? MapOptions(
+                    bounds: LatLngBounds.fromPoints(_points),
+                    boundsOptions: const FitBoundsOptions(padding: EdgeInsets.all(32)),
+                    onTap: (tapPosition, point) => _handleTap(point),
+                  )
+                // Aksi takdirde, ön tanımlı `initialLocation` ve sabit bir zoom seviyesi kullan
+                : MapOptions(
+                    center: widget.initialLocation ?? LatLng(0, 0),
+                    zoom: 13.0,
+                    onTap: (tapPosition, point) => _handleTap(point),
+                  ),
             children: [
+              // OpenStreetMap karolarını (tiles) kullanan temel harita katmanı.
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.project_management_app',
               ),
+              // drawPolyline modu etkinse noktalar arasında çizgi (polyline) çizer.
               if (_points.isNotEmpty &&
                   widget.mode == MapInteractionMode.drawPolyline)
                 PolylineLayer(
@@ -234,15 +259,16 @@ class _MapSelectorState extends State<MapSelector> {
                     )
                   ],
                 ),
+              // Seçilen her nokta için işaretçi (marker) renderlar.
               MarkerLayer(
                 markers: _points.map((point) {
                   return Marker(
                     point: point,
                     width: 40.w,
-                    height: 40.h,
+                    height: 40.w,
                     child: Icon(
-                      Icons.location_on,
-                      color: Colors.red,
+                      Icons.place,
+                      color: Theme.of(context).primaryColor,
                       size: 36.sp,
                     ),
                   );
@@ -253,5 +279,12 @@ class _MapSelectorState extends State<MapSelector> {
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _mapController.dispose();
+    super.dispose();
   }
 }

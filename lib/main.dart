@@ -4,12 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/features/activity/domain/usecases/activity_usecases.dart';
 import 'core/preferences/AppPreferences.dart';
-import 'core/utils/app_navigator.dart';
 import 'core/utils/app_theme.dart';
 import 'core/utils/slide_right_to_left_page_transitions_builder.dart';
 import 'features/task/domain/usecases/task_usecases.dart';
 import 'injection.dart';
-
 import 'features/auth/presentation/bloc/login_cubit.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
@@ -45,8 +43,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // **Burada “builder” içinde ScreenUtil.init yapıyoruz:**
-      builder: (context, widget) {
+      // Uygulama genelinde ekran ölçeklendirme ve geri tuşu yönetimi
+      builder: (context, child) {
         // O anki cihazın gerçek genişlik/yükseklik değerlerini alıyoruz.
         final size = MediaQuery.of(context).size;
 
@@ -57,13 +55,7 @@ class MyApp extends StatelessWidget {
           minTextAdapt: true,
         );
 
-        return WillPopScope(
-          onWillPop: () async {
-            AppNavigator.maybePopWithResult(context);
-            return false;
-          },
-          child: widget!,
-        );
+        return child!;
       },
 
       initialRoute: '/login',

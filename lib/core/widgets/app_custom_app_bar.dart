@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../utils/app_navigator.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -36,7 +35,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               onPressed: onBack != null
                   ? onBack!
-                  : () => AppNavigator.maybePopWithResult(context),
+                  : () =>Navigator.of(context).pop(true),
             )
           : null,
       title: Text(

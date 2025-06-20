@@ -1,6 +1,3 @@
-
-
-
 import '../models/chart_dashboard_data.dart';
 import '../models/faliyet_line.dart';
 import '../models/proje_adet_model.dart';

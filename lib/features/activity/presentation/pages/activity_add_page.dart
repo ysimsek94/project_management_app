@@ -8,12 +8,12 @@ import 'package:project_management_app/features/activity/data/models/faliyet_gor
 import 'package:project_management_app/features/activity/data/models/faliyet_response_model.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/gorev_durum_enum.dart';
+import '../../../../core/page/base_page.dart';
 import '../../../../core/page/map_interaction_page.dart';
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/utils/app_map_utils.dart';
 import '../../../../core/widgets/app_alerts.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_custom_app_bar.dart';
 import '../../../../core/widgets/app_date_time_picker.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/app_dropdown.dart';
@@ -167,15 +167,10 @@ class _ActivityAddPageState extends State<ActivityAddPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.activity == null ? 'Görev Ekle' : 'Görevi Düzenle',
-        showBackButton: true,
-        onBack: () {
-          Navigator.of(context).pop<bool>(true);
-        },
-      ),
-      body: SafeArea(
+    return BasePage(
+      title: widget.activity == null ? 'Görev Ekle' : 'Görevi Düzenle',
+      showBackButton: true,
+      child: SafeArea(
         child: BlocConsumer<ActivityCubit, ActivityState>(
           listener: _blocListener,
           builder: (context, state) {
@@ -545,14 +540,14 @@ class _ActivityAddPageState extends State<ActivityAddPage> {
                       _openGalleryPage();
                     },
                   ),
-                  _buildActionCard(
-                    Icons.location_on_outlined,
-                    'Konum Seç',
-                    () {
-                      Navigator.pop(context);
-                      _openMapSelector();
-                    },
-                  ),
+                  // _buildActionCard(
+                  //   Icons.location_on_outlined,
+                  //   'Konum Seç',
+                  //   () {
+                  //     Navigator.pop(context);
+                  //     _openMapSelector();
+                  //   },
+                  // ),
                   _buildActionCard(
                     Icons.fullscreen_outlined,
                     'Haritada Aç',
@@ -563,7 +558,7 @@ class _ActivityAddPageState extends State<ActivityAddPage> {
                             context, "Lütfen önce görevi kaydedin.");
                         return;
                       }
-                      final result = await Navigator.push<LatLng>(
+                       await Navigator.push<LatLng>(
                         context,
                         MaterialPageRoute(
                           builder: (_) => MapInteractionPage(

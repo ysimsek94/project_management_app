@@ -22,7 +22,7 @@ class PieData {
   Map<String, dynamic> toJson() => _$PieDataToJson(this);
 }
 
-/// Proje tutar paylaşımı grafiği için root model
+/// Proje tutar paylaşımı grafiği için root models
 @JsonSerializable(explicitToJson: true)
 class ChartDashboardData {
   final List<PieData> series;

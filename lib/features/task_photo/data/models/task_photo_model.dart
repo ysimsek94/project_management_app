@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'task_photo_model.g.dart';
 
-/// JSON-serializable model for TaskPhoto entity
+/// JSON-serializable models for TaskPhoto entity
 @JsonSerializable()
 class TaskPhotoModel {
   @JsonKey(defaultValue: '')

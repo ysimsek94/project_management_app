@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'activity_photo_model.g.dart';
 
-/// JSON-serializable model for ActivityPhoto entity
+/// JSON-serializable models for ActivityPhoto entity
 @JsonSerializable()
 class ActivityPhotoModel {
   @JsonKey(defaultValue: '')

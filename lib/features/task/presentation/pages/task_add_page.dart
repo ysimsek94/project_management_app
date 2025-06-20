@@ -9,7 +9,6 @@ import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/preferences/AppPreferences.dart';
 import 'package:project_management_app/core/widgets/app_alerts.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
-import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/core/widgets/app_dialog.dart';
 import 'package:project_management_app/core/widgets/app_dropdown.dart';
 import 'package:project_management_app/core/widgets/app_text_field.dart';
@@ -20,12 +19,12 @@ import 'package:project_management_app/features/task/data/models/task_list_item_
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
 import '../../../../core/constants/gorev_durum_enum.dart';
+import '../../../../core/page/base_page.dart';
 import '../../../../core/page/map_interaction_page.dart';
 import '../../../../core/widgets/app_date_time_picker.dart';
 import '../../../../injection.dart';
 import '../../../task_photo/presentation/bloc/task_photo_cubit.dart';
 import '../../../task_photo/presentation/pages/task_gallery_page.dart';
-
 
 /// Görev ekleme/düzenleme sayfası.
 class TaskAddPage extends StatefulWidget {
@@ -172,29 +171,24 @@ class _TaskAddPageState extends State<TaskAddPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.task == null ? 'Görev Ekle' : 'Görevi Düzenle',
-        showBackButton: true,
-        onBack: () {
-          Navigator.of(context).pop<bool>(true);
-        },
-      ),
-      body: SafeArea(
-        child: BlocConsumer<TaskCubit, TaskState>(
-          listener: _blocListener,
-          builder: (context, state) {
-            return _buildForm(state is TaskOperationInProgress);
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: _showActionSheet,
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        child: const Icon(Icons.more_vert, size: 20),
-      ),
+    return BasePage(
+      title: widget.task == null ? 'Görev Ekle' : 'Görevi Düzenle',
+      showBackButton: true,
+      child:SafeArea(
+            child: BlocConsumer<TaskCubit, TaskState>(
+              listener: _blocListener,
+              builder: (context, state) {
+                return _buildForm(state is TaskOperationInProgress);
+              },
+            ),
+          ),
+        floatingActionButton:   FloatingActionButton.small(
+            onPressed: _showActionSheet,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Colors.white,
+            elevation: 2,
+            child: const Icon(Icons.more_vert, size: 20),
+          ),
     );
   }
 
@@ -587,14 +581,14 @@ class _TaskAddPageState extends State<TaskAddPage> {
                       _openGalleryPage();
                     },
                   ),
-                  _buildActionCard(
-                    Icons.location_on_outlined,
-                    'Konum Seç',
-                    () {
-                      Navigator.pop(context);
-                      _openMapSelector();
-                    },
-                  ),
+                  // _buildActionCard(
+                  //   Icons.location_on_outlined,
+                  //   'Konum Seç',
+                  //   () {
+                  //     Navigator.pop(context);
+                  //     _openMapSelector();
+                  //   },
+                  // ),
                   _buildActionCard(
                     Icons.fullscreen_outlined,
                     'Haritada Aç',

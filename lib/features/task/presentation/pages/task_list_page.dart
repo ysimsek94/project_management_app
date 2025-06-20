@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:project_management_app/core/constants/app_colors.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
-import 'package:project_management_app/core/extensions/theme_extensions.dart';
 
-import 'package:project_management_app/core/widgets/app_custom_app_bar.dart';
 import 'package:project_management_app/core/widgets/app_button.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_add_page.dart';
 
+import '../../../../core/page/base_page.dart';
 import '../widgets/task_list_view.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -40,6 +38,17 @@ class _TaskListPageState extends State<TaskListPage> {
   late TaskCubit _taskCubit;
   final TextEditingController _searchController = TextEditingController();
 
+  void _updateSelectedDate(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+    });
+    if (isAdmin) {
+      _taskCubit.getAllTaskList();
+    } else {
+      _taskCubit.getTaskList(date.yMd);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,12 +73,10 @@ class _TaskListPageState extends State<TaskListPage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _taskCubit,
-      child: Scaffold(
-        appBar: const CustomAppBar(
-          title: "Görev Listesi",
-          showBackButton: false,
-        ),
-        body: Padding(
+      child: BasePage(
+        title: "Görev Listesi",
+        showBackButton: false,
+        child: Padding(
           padding: EdgeInsets.all(8.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,14 +161,7 @@ class _TaskListPageState extends State<TaskListPage> {
                       DatePickerSection(
                         currentDate: _selectedDate,
                         onDateSelected: (date) {
-                          setState(() {
-                            _selectedDate = date;
-                            if (isAdmin) {
-                              _taskCubit.getAllTaskList();
-                            } else {
-                              _taskCubit.getTaskList(date.yMd);
-                            }
-                          });
+                          _updateSelectedDate(date);
                         },
                       ),
                     ],
@@ -174,11 +174,25 @@ class _TaskListPageState extends State<TaskListPage> {
                       SizedBox(width: 8.w),
                       Text("Tüm Görevler - ",
                           style: TextStyle(fontSize: 14.sp)),
-                      Text(
-                        _selectedDate.dMy,
-                        style: TextStyle(
+                      GestureDetector(
+                        onTap: () async {
+                          final pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedDate != null) {
+                            _updateSelectedDate(pickedDate);
+                          }
+                        },
+                        child: Text(
+                          _selectedDate.dMy,
+                          style: TextStyle(
                             fontSize: 14.sp,
-                            color: Theme.of(context).primaryColor),
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -243,7 +257,12 @@ class _TaskListPageState extends State<TaskListPage> {
                               ),
                             ).then((value) {
                               if (value == true) {
-                                _taskCubit.getTaskList(_selectedDate.yMd);
+                                // Eğer yönetici ise tüm görev listesini yenile, değilse seçili tarihin görevlerini getir
+                                if (isAdmin) {
+                                  _taskCubit.getAllTaskList();
+                                } else {
+                                  _taskCubit.getTaskList(_selectedDate.yMd);
+                                }
                               }
                             });
                           },

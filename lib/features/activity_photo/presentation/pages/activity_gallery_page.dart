@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:path/path.dart' as p;
+import 'package:project_management_app/core/page/base_page.dart';
 import 'package:project_management_app/features/activity/data/models/faliyet_response_model.dart';
 import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/services/photo_picker_service.dart';
@@ -59,7 +60,7 @@ class _ActivityGalleryPageState extends State<ActivityGalleryPage> {
   }
 
   Future<void> _pickAndUpload(bool fromCamera) async {
-    final file = await PhotoPickerService.pickImage(fromCamera: fromCamera);
+    final file = await PhotoPickerService.pickImage(fromCamera: fromCamera,context:context);
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
@@ -92,11 +93,10 @@ class _ActivityGalleryPageState extends State<ActivityGalleryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
+    return BasePage(
         title: 'Fotoğraflar',
         showBackButton: true,
-      ),
+
       floatingActionButton: FloatingActionButton.small(
         onPressed: () {
           showModalBottomSheet(
@@ -137,7 +137,7 @@ class _ActivityGalleryPageState extends State<ActivityGalleryPage> {
         tooltip: 'Fotoğraf Ekle',
         child: const Icon(Icons.add_a_photo_outlined),
       ),
-      body: BlocConsumer<ActivityPhotoCubit, ActivityPhotoState>(
+      child: BlocConsumer<ActivityPhotoCubit, ActivityPhotoState>(
         listener: (context, state) {
           if (state is ActivityPhotoError) {
             AppAlerts.showError(context, state.message);
@@ -239,6 +239,8 @@ class _ActivityGalleryPageState extends State<ActivityGalleryPage> {
                                 final ok = await AppAlerts.showConfirmationDialog(
                                   context,
                                   title: 'Silmek istiyor musunuz?',
+                                  confirmText: "Sil",
+                                  cancelText: "Kapat",
                                 );
                                 if (!ok) return;
                                 await context.read<ActivityPhotoCubit>().delete(photo.id);

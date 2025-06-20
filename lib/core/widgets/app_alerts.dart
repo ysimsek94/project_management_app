@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:project_management_app/core/widgets/app_button.dart';
 
 class AppAlerts {
   static void showError(BuildContext context, String message) {
@@ -55,52 +56,58 @@ class AppAlerts {
 
   static Future<bool> showConfirmationDialog(
     BuildContext context, {
-    String title = 'Onay',
+    required String title,
     String? description,
     String confirmText = 'Evet',
     String cancelText = 'Hayır',
     bool barrierDismissible = true,
   }) async {
-    return await showDialog<bool>(
+    final theme = Theme.of(context);
+    final result = await showDialog<bool>(
       context: context,
       barrierDismissible: barrierDismissible,
-      builder: (context) {
-        return AlertDialog(
-          insetPadding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-          title: Text(
-            title,
-            style: TextStyle(fontSize: 18.sp),
-          ),
-          content: description != null
-              ? Text(
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 32.h),
+        child: Padding(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleLarge,
+              ),
+              if (description != null) ...[
+                SizedBox(height: 8.h),
+                Text(
                   description,
-                  style: TextStyle(fontSize: 14.sp),
-                )
-              : null,
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                child: Text(
-                  cancelText,
-                  style: TextStyle(fontSize: 14.sp),
+                  style: theme.textTheme.titleMedium,
                 ),
+              ],
+              SizedBox(height: 16.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(cancelText.toUpperCase()),
+                  ),
+                  SizedBox(width: 8.w),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(confirmText.toUpperCase()),
+                  ),
+                ],
               ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                child: Text(
-                  confirmText,
-                  style: TextStyle(fontSize: 14.sp, color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    ).then((value) => value ?? false);
+            ],
+          ),
+        ),
+      ),
+    );
+    return result == true;
   }
 }

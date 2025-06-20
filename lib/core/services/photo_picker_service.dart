@@ -1,19 +1,22 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import '../widgets/app_alerts.dart';
 
 class PhotoPickerService {
   static final ImagePicker _picker = ImagePicker();
 
   /// Kameradan veya galeriden tek fotoğraf seçer
-  static Future<File?> pickImage({required bool fromCamera}) async {
+  static Future<File?> pickImage({required bool fromCamera, required BuildContext context}) async {
     if (kIsWeb) return null;
 
     final permissionGranted = fromCamera
-        ? await _getCameraPermission()
-        : await _getGalleryPermission();
+        ? await _getCameraPermission(context)
+        : await _getGalleryPermission(context);
 
     if (!permissionGranted) return null;
 
@@ -30,10 +33,12 @@ class PhotoPickerService {
   }
 
   /// Galeriden birden fazla fotoğraf seçer
-  static Future<List<File>> pickMultipleFromGallery() async {
+  static Future<List<File>> pickMultipleFromGallery({required BuildContext context}) async {
     if (kIsWeb) return [];
 
-    final permissionGranted = await _getGalleryPermission();
+    AppAlerts.showWarning(context, 'Galeri izni isteniyor...');
+
+    final permissionGranted = await _getGalleryPermission(context);
     if (!permissionGranted) return [];
 
     try {
@@ -46,25 +51,44 @@ class PhotoPickerService {
   }
 
   /// Galeri izni kontrolü (Android/iOS)
-  static Future<bool> _getGalleryPermission() async {
-    if (Platform.isIOS) {
-      final status = await Permission.photos.request();
-      return status.isGranted;
-    } else if (Platform.isAndroid) {
-      if (await _isAndroid13OrAbove()) {
-        final status = await Permission.photos.request();
-        return status.isGranted;
-      } else {
-        final status = await Permission.storage.request();
-        return status.isGranted;
-      }
+  static Future<bool> _getGalleryPermission(BuildContext context) async {
+    // Determine correct permission based on platform and Android version
+    final permission = Platform.isIOS
+        ? Permission.photos
+        : (await _isAndroid13OrAbove() ? Permission.photos : Permission.storage);
+
+    // Request the permission
+    final status = await permission.request();
+
+    // Temporarily denied: log and return
+    if (status.isDenied) {
+      AppAlerts.showWarning(context, 'Galeri izni geçici olarak reddedildi.');
+      return false;
     }
-    return false;
+
+    // Permanently denied: log, open app settings, and return
+    if (status.isPermanentlyDenied) {
+      AppAlerts.showWarning(context, 'Galeri izni kalıcı olarak reddedildi. Ayarlar açılıyor...');
+      await openAppSettings();
+      return false;
+    }
+
+    // Granted or limited (iOS): proceed
+    return status.isGranted;
   }
 
   /// Kamera izni kontrolü
-  static Future<bool> _getCameraPermission() async {
+  static Future<bool> _getCameraPermission(BuildContext context) async {
     final status = await Permission.camera.request();
+    if (status.isDenied) {
+      AppAlerts.showWarning(context, 'Kamera izni geçici olarak reddedildi.');
+      return false;
+    }
+    if (status.isPermanentlyDenied) {
+      AppAlerts.showWarning(context, 'Kamera izni kalıcı olarak reddedildi. Ayarlar açılıyor...');
+      await openAppSettings();
+      return false;
+    }
     return status.isGranted;
   }
 

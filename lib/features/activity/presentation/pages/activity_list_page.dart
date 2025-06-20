@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
 
@@ -28,6 +29,8 @@ class ActivityListPage extends StatefulWidget {
 }
 
 class _ActivityListPageState extends State<ActivityListPage> {
+  bool get isAdmin => context.hasRole('admin');
+
   DateTime _selectedDate = DateTime.now();
   List<String> _selectedUsers = [];
   List<String> _users = ['Ali Yılmaz','Yusuf Şimşek','Bekir Yıldız','Emre Boz','Mehmet Yurdagul','Rıdvan Baş','Yusuf Sari','Burak Sar','Erman Tor']; // later fill from API
@@ -47,7 +50,16 @@ class _ActivityListPageState extends State<ActivityListPage> {
     _activityCubit.close();
     super.dispose();
   }
-
+  void _updateSelectedDate(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+    });
+    if (isAdmin) {
+      _activityCubit.getActivityList(date.yMd);
+    } else {
+      _activityCubit.getActivityList(date.yMd);
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -134,6 +146,26 @@ class _ActivityListPageState extends State<ActivityListPage> {
                         style: TextStyle(
                             fontSize: 14,
                             color: Theme.of(context).primaryColor),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          final pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: _selectedDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedDate != null) {
+                            _updateSelectedDate(pickedDate);
+                          }
+                        },
+                        child: Text(
+                          _selectedDate.dMy,
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
                       ),
                     ],
                   ),
