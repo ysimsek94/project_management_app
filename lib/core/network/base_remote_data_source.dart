@@ -9,12 +9,18 @@ abstract class BaseRemoteDataSource {
   Future<List<T>> getList<T>(
       String path,
       T Function(Map<String, dynamic>) fromJson, {
+        Map<String, dynamic>? queryParameters,
         Map<int, String>? customMsgs,
       }) async {
-    final response = await api.get(path);
+    final response = await api.get(
+      path,
+      queryParameters: queryParameters,
+    );
     return api.handleResponse<List<T>>(
       response,
-          (data) => (data as List).map((e) => fromJson(e as Map<String, dynamic>)).toList(),
+          (data) => (data as List)
+          .map((e) => fromJson(e as Map<String, dynamic>))
+          .toList(),
       customMessages: customMsgs,
     );
   }

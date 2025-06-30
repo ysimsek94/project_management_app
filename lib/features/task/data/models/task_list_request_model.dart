@@ -7,7 +7,7 @@ part 'task_list_request_model.g.dart';
 @JsonSerializable()
 class TaskListRequestModel {
   final int gorevId;
-  final int kullaniciId;
+  final int? kullaniciId;
   @JsonKey(name: 'durumId', fromJson: GorevDurumEnumHelper.fromId, toJson: _gorevDurumToJson)
   final GorevDurumEnum durum;
   final String? baslangicTarihi;
@@ -15,7 +15,7 @@ class TaskListRequestModel {
 
   TaskListRequestModel({
     required this.gorevId,
-    required this.kullaniciId,
+    this.kullaniciId,
     required this.durum,
     required this.baslangicTarihi,
     this.baslangicTarihi1,

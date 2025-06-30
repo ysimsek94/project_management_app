@@ -10,7 +10,7 @@ TaskListRequestModel _$TaskListRequestModelFromJson(
         Map<String, dynamic> json) =>
     TaskListRequestModel(
       gorevId: (json['gorevId'] as num).toInt(),
-      kullaniciId: (json['kullaniciId'] as num).toInt(),
+      kullaniciId: (json['kullaniciId'] as num?)?.toInt(),
       durum: GorevDurumEnumHelper.fromId((json['durumId'] as num).toInt()),
       baslangicTarihi: json['baslangicTarihi'] as String?,
       baslangicTarihi1: json['baslangicTarihi1'] as String?,

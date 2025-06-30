@@ -1,6 +1,7 @@
 
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:project_management_app/features/home/data/models/proje_request_model.dart';
 import '../../data/models/proje_adet_model.dart';
 import '../../data/models/chart_dashboard_data.dart';
 import '../../data/models/faliyet_line.dart';
@@ -16,10 +17,10 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
     emit(AdminDashboardLoading());
     try {
       // UseCase; adapt method names as in your implementation
-      final List<ProjeAdetModel> statusList = await _getDashboardDataUseCase.getProjectStatusList();
-      final ChartDashboardData chartData = await _getDashboardDataUseCase.getChartDashboardData();
+      final List<ProjeAdetModel> statusList = await _getDashboardDataUseCase.getProjectStatusList(ProjeRequestModel.empty());
+      final ChartDashboardData chartData = await _getDashboardDataUseCase.getChartDashboardData(ProjeRequestModel.empty());
       final List<FaliyetLine> activityByDept = await _getDashboardDataUseCase.getActivityByDepartment();
-      final ProjectVsActivity projectVsActivity = await _getDashboardDataUseCase.getProjectVsActivity();
+      final List<PieData> projectVsActivity = await _getDashboardDataUseCase.getProjectVsActivity();
 
       emit(AdminDashboardLoaded(
         projectStatusList: statusList,

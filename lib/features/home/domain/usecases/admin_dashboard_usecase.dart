@@ -1,3 +1,4 @@
+import '../../data/models/proje_request_model.dart';
 import '../../domain/repositories/admin_dashboard_repository.dart';
 import '../../data/models/proje_adet_model.dart';
 import '../../data/models/chart_dashboard_data.dart';
@@ -10,13 +11,13 @@ class AdminDashboardDataUseCases {
   AdminDashboardDataUseCases(this._repository);
 
   /// Returns the list of project status counts for the info cards.
-  Future<List<ProjeAdetModel>> getProjectStatusList() {
-    return _repository.fetchProjectStatusCounts();
+  Future<List<ProjeAdetModel>> getProjectStatusList(ProjeRequestModel request) {
+    return _repository.fetchProjectStatusCounts(request);
   }
 
   /// Returns the data needed for the pie chart of project amounts.
-  Future<ChartDashboardData> getChartDashboardData() {
-    return _repository.fetchProjectAmountChart();
+  Future<ChartDashboardData> getChartDashboardData(ProjeRequestModel request) {
+    return _repository.fetchProjectAmountChart(request);
   }
 
   /// Returns the list of activity completion status grouped by department.
@@ -25,7 +26,7 @@ class AdminDashboardDataUseCases {
   }
 
   /// Returns the summary counts for project vs activity donut chart.
-  Future<ProjectVsActivity> getProjectVsActivity() {
+  Future<List<PieData>> getProjectVsActivity() {
     return _repository.fetchProjectVsActivitySummary();
   }
 }

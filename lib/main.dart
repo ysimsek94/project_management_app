@@ -11,12 +11,27 @@ import 'injection.dart';
 import 'features/auth/presentation/bloc/login_cubit.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'package:project_management_app/features/kisi/presentation/cubit/kisi_cubit.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppPreferences.init();
   configureDependencies();
-  runApp(const MyApp());
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<LoginCubit>(
+          create: (_) => getIt<LoginCubit>(),
+        ),
+        BlocProvider<KisiCubit>(
+          create: (_) {
+            return getIt<KisiCubit>()..loadKisiler();
+          },
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

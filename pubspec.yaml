@@ -20,6 +20,7 @@ dependencies:
   geolocator: ^14.0.1
   flutter_secure_storage: ^9.2.4
   json_annotation: ^4.9.0
+  freezed_annotation: ^2.4.4
   cupertino_icons: ^1.0.8
   awesome_snackbar_content: ^0.1.6
   flutter_screenutil: ^5.9.3
@@ -47,8 +48,7 @@ dev_dependencies:
     sdk: flutter
   build_runner: ^2.4.7
   json_serializable: ^6.7.1
-  freezed: ^2.4.5
-  freezed_annotation: ^2.4.1
+  freezed: ^2.5.7
   flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the

@@ -11,8 +11,8 @@ class MapCubit extends Cubit<MapState> {
   Future<void> loadTasks() async {
     try {
       emit(MapLoading());
-      final tasks = await _mapUseCases.getAllTasks();
-      emit(MapLoaded(tasks));
+      final projectList = await _mapUseCases.getAllProjects();
+      emit(MapLoaded(projectList));
     } catch (e) {
       emit(MapError('Görevler yüklenemedi: \$e'));
     }

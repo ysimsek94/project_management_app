@@ -35,16 +35,9 @@ class TaskCubit extends Cubit<TaskState> {
   //   }
   // }
 
-  Future<void> getTaskList(String date) async {
+  Future<void> getTaskList(TaskListRequestModel request) async {
     emit(TaskLoadInProgress());
     try {
-      final request = TaskListRequestModel(
-          gorevId: 0,
-          kullaniciId: AppPreferences.kullaniciId ?? 0,
-          durum: GorevDurumEnum.none,
-          baslangicTarihi: "2025-01-01T00:00:00",
-          baslangicTarihi1: null);
-
       var tasks = await _taskUseCases.getTaskList(request);
       _allTasks = tasks; // tam listeyi saklıyoruz
       emit(TaskLoadSuccess(_allTasks)); // ekrana tam listeyi basıyoruz

@@ -34,23 +34,3 @@ class ChartDashboardData {
 
   Map<String, dynamic> toJson() => _$ChartDashboardDataToJson(this);
 }
-
-/// Proje vs Faaliyet donut grafiği için özet
-@JsonSerializable()
-class ProjectVsActivity {
-  @JsonKey(defaultValue: 0)
-  final int proje;
-
-  @JsonKey(defaultValue: 0)
-  final int faaliyet;
-
-  ProjectVsActivity({
-    required this.proje,
-    required this.faaliyet,
-  });
-
-  factory ProjectVsActivity.fromJson(Map<String, dynamic> json) =>
-      _$ProjectVsActivityFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ProjectVsActivityToJson(this);
-}

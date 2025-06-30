@@ -1,5 +1,7 @@
 
-import 'package:project_management_app/features/task/data/models/task_list_item_model.dart';
+
+import 'package:project_management_app/features/home/data/models/proje_tamamlanma_line.dart';
+import 'package:project_management_app/features/map/data/models/proje_line_model.dart';
 
 import '../repositories/map_repository.dart';
 
@@ -8,7 +10,7 @@ class MapUseCases {
 
   MapUseCases({required this.mapRepository});
 
-  Future<List<TaskListItemModel>> getAllTasks() async {
-    return await mapRepository.fetchAllTasks();
+  Future<List<ProjeLineModel>> getAllProjects() async {
+    return await mapRepository.getAllProjects();
   }
 }

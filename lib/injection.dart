@@ -2,6 +2,9 @@ import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:project_management_app/core/network/api_service.dart';
 import 'package:project_management_app/features/home/domain/usecases/admin_dashboard_usecase.dart';
+import 'package:project_management_app/features/kisi/domain/usecases/kisi_usecases.dart';
+import 'package:project_management_app/features/map/data/datasources/map_remote_data_source.dart';
+import 'package:project_management_app/features/map/data/datasources/map_remote_data_source_impl.dart';
 import 'package:project_management_app/features/profile/data/datasources/profile_remote_data_source_impl.dart';
 import 'package:project_management_app/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:project_management_app/features/profile/domain/repositories/profile_repository.dart';
@@ -33,6 +36,11 @@ import 'features/home/domain/repositories/home_repository.dart';
 import 'features/home/domain/usecases/home_usecases.dart';
 import 'features/home/presentation/cubit/admin_dashboard_cubit.dart';
 import 'features/home/presentation/cubit/home_cubit.dart';
+import 'features/kisi/data/datasources/kisi_remote_data_source.dart';
+import 'features/kisi/data/datasources/kisi_remote_data_source_impl.dart';
+import 'features/kisi/data/repositories/kisi_repository_impl.dart';
+import 'features/kisi/domain/repositories/kisi_repository.dart';
+import 'features/kisi/presentation/cubit/kisi_cubit.dart';
 import 'features/map/data/repositories/map_repository_impl.dart';
 import 'features/map/domain/repositories/map_repository.dart';
 import 'features/map/domain/usecases/map_usecases.dart';
@@ -195,13 +203,30 @@ void configureDependencies() {
   );
 
   // ===== Map Feature =====
+  getIt.registerLazySingleton<MapRemoteDataSource>(
+    () => MapRemoteDataSourceImpl(getIt<ApiService>()),
+  );
   getIt.registerLazySingleton<MapRepository>(
-    () => MapRepositoryImpl(remoteDataSource: getIt<TaskRemoteDataSource>()),
+    () => MapRepositoryImpl(remoteDataSource: getIt<MapRemoteDataSource>()),
   );
   getIt.registerLazySingleton<MapUseCases>(
     () => MapUseCases(mapRepository: getIt<MapRepository>()),
   );
   getIt.registerFactory<MapCubit>(
     () => MapCubit(getIt<MapUseCases>()),
+  );
+
+  // ===== Kisi Feature =====
+  getIt.registerLazySingleton<KisiRemoteDataSource>(
+        () => KisiRemoteDataSourceImpl(getIt<ApiService>()),
+  );
+  getIt.registerLazySingleton<KisiRepository>(
+        () => KisiRepositoryImpl(getIt<KisiRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<KisiUseCases>(
+        () => KisiUseCases(getIt<KisiRepository>()),
+  );
+  getIt.registerFactory<KisiCubit>(
+        () => KisiCubit(getIt<KisiUseCases>()),
   );
 }

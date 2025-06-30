@@ -3,14 +3,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
+import 'package:project_management_app/core/preferences/AppPreferences.dart';
 
 import 'package:project_management_app/core/widgets/app_button.dart';
+import 'package:project_management_app/features/kisi/data/models/kisi_model.dart';
+import 'package:project_management_app/features/kisi/presentation/cubit/kisi_cubit.dart';
+import 'package:project_management_app/features/kisi/presentation/cubit/kisi_state.dart';
 import 'package:project_management_app/features/task/domain/usecases/task_usecases.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_cubit.dart';
 import 'package:project_management_app/features/task/presentation/bloc/task_state.dart';
 import 'package:project_management_app/features/task/presentation/pages/task_add_page.dart';
 
+import '../../../../core/constants/gorev_durum_enum.dart';
 import '../../../../core/page/base_page.dart';
+import '../../data/models/task_list_request_model.dart';
 import '../widgets/task_list_view.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -29,39 +35,77 @@ class TaskListPage extends StatefulWidget {
 }
 
 class _TaskListPageState extends State<TaskListPage> {
-  bool get isAdmin => context.hasRole('admin');
-
-  List<String> _selectedUsers = [];
-  List<String> _users = ['Ali Yılmaz','Yusuf Şimşek','Bekir Yıldız','Emre Boz','Mehmet Yurdagul','Rıdvan Baş','Yusuf Sari','Burak Sar','Erman Tor']; // later fill from API
-
+  int? _selectedUserId;
   DateTime _selectedDate = DateTime.now();
   late TaskCubit _taskCubit;
   final TextEditingController _searchController = TextEditingController();
 
+  // Seçilen tarihi günceller ve bu tarihe göre görevleri yeniden yükler
   void _updateSelectedDate(DateTime date) {
     setState(() {
       _selectedDate = date;
     });
-    if (isAdmin) {
-      _taskCubit.getAllTaskList();
-    } else {
-      _taskCubit.getTaskList(date.yMd);
-    }
+    _loadTasks();
   }
 
+  // Widget oluşturulduğunda cubit'i başlatır ve ilk görev listesini yükler
   @override
   void initState() {
     super.initState();
     _taskCubit = TaskCubit(widget.taskUsecases);
-    if (isAdmin) {
-      // TODO: fetch user list into _users
-      _selectedUsers = [];
-      _taskCubit.getAllTaskList();
-    } else {
-      _taskCubit.getTaskList(DateTime.now().yMd);
-    }
+    _loadTasks();
   }
 
+  // Görev listesini API'den çekmek için gerekli isteği başlatır
+  void _loadTasks() {
+    final req = _makeRequestModel();
+    _taskCubit.getTaskList(req);
+  }
+
+  // Görev listesi için istek modelini oluşturur, admin ise alternatif kullanıcı id'si kullanabilir
+  TaskListRequestModel _makeRequestModel({int? overrideUserId}) {
+    // Kullanıcı id'sini adminlik durumuna göre belirle
+    final userId = context.isAdmin
+        ? (overrideUserId ?? (_selectedUserId ?? 0))
+        : (AppPreferences.kullaniciId ?? 0);
+    // TaskListRequestModel objesini oluştur ve döndür
+    return TaskListRequestModel(
+      gorevId: 0,
+      kullaniciId: userId,
+      durum: GorevDurumEnum.none,
+      baslangicTarihi: _selectedDate.yMd,
+      baslangicTarihi1: null,
+    );
+  }
+
+  // Yüklenme sürecini gösteren indikatör widget'ı
+  Widget _buildLoading() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  // Hata durumunda gösterilecek mesaj ve tekrar dene butonunu içeren widget
+  Widget _buildError(String message) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          AppSizes.gapH8,
+          ElevatedButton(
+            onPressed: () {
+              _loadTasks();
+            },
+            child: Text(
+              "Tekrar Dene",
+              style: TextStyle(fontSize: 14.sp),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Sayfa kapatılırken text controller ve cubit kaynaklarını temizler
   @override
   void dispose() {
     _searchController.dispose();
@@ -69,6 +113,7 @@ class _TaskListPageState extends State<TaskListPage> {
     super.dispose();
   }
 
+  // Sayfanın ana görsel yapısını oluşturan build metodu
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -98,63 +143,50 @@ class _TaskListPageState extends State<TaskListPage> {
                                   Colors.black87,
                         ),
                       ),
-                      if (isAdmin)
+                      if (context.isAdmin)
                         AppButton(
                           title: "Kullanıcı Seç",
                           icon: Icons.people,
                           onClick: () async {
-                            final result = await showModalBottomSheet<List<String>>(
+                            final result = await showModalBottomSheet<int?>(
                               context: context,
                               backgroundColor: Colors.white,
                               isScrollControlled: true,
                               shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16)),
                               ),
-                              builder: (_) => UserSelectionBottomSheet(
-                                users: _users,
-                                selectedUsers: _selectedUsers,
-                              ),
+                              builder: (_) {
+                                return BlocBuilder<KisiCubit, KisiState>(
+                                  builder: (context, state) {
+                                    if (state is KisiLoading) {
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    } else if (state is KisiLoaded) {
+                                      return UserSelectionBottomSheet(
+                                        users: state.kisiler,
+                                        selectedUserId: _selectedUserId,
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                );
+                              },
                             );
-                            if (result != null) {
-                              setState(() {
-                                _selectedUsers = result;
-                                if (_selectedUsers.isEmpty) {
-                                  _taskCubit.getTaskList(_selectedDate.yMd);
-                                } else {
-                                  // _activityCubit.getActivityListByUsers(_selectedDate.yMd, _selectedUsers);
-                                }
-                              });
-                            }
+                     // Eğer kullanıcı seçimi iptal edildiyse (result null) kullanıcıId'yi 0 olarak ata
+                     final userId = result ?? 0;
+                     setState(() {
+                       _selectedUserId = userId;
+                     });
+                     _taskCubit.getTaskList(_makeRequestModel(overrideUserId: userId));
                           },
                           height: 35,
                           borderRadius: 10,
                           padding: EdgeInsets.symmetric(horizontal: 16),
                         ),
-                      // if (context.hasRole('admin'))
-                      //   AppButton(
-                      //     title: "+ Add Task",
-                      //     onClick: () {
-                      //       final cubit = _taskCubit;
-                      //       Navigator.push(
-                      //         context,
-                      //         MaterialPageRoute(
-                      //           builder: (_) => BlocProvider.value(
-                      //             value: _taskCubit,
-                      //             child: const TaskAddPage(),
-                      //           ),
-                      //         ),
-                      //       ).then((value) {
-                      //         if (value == true) {
-                      //           cubit.getTaskList(_selectedDate.yMd);
-                      //         }
-                      //       });
-                      //     },
-                      //     minWidth: 45.w,
-                      //     height: 35.h,
-                      //   ),
                     ],
                   ),
-                  SizedBox(height: 12.h),
+                  AppSizes.gapH12,
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
@@ -166,7 +198,7 @@ class _TaskListPageState extends State<TaskListPage> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 16.h),
+                  AppSizes.gapH16,
                   Row(
                     children: [
                       Icon(Icons.calendar_today,
@@ -196,7 +228,7 @@ class _TaskListPageState extends State<TaskListPage> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 16.h),
+                  AppSizes.gapH16,
                   AnimatedBuilder(
                     animation: _searchController,
                     builder: (context, child) {
@@ -219,7 +251,7 @@ class _TaskListPageState extends State<TaskListPage> {
                       );
                     },
                   ),
-                  SizedBox(height: 16.h),
+                  AppSizes.gapH16,
                 ],
               ),
               // Expandable widget
@@ -227,7 +259,7 @@ class _TaskListPageState extends State<TaskListPage> {
                 child: BlocBuilder<TaskCubit, TaskState>(
                   builder: (context, state) {
                     if (state is TaskLoadInProgress) {
-                      return const Center(child: CircularProgressIndicator());
+                      return _buildLoading();
                     } else if (state is TaskLoadSuccess) {
                       final tasks = state.tasks;
                       if (tasks.isEmpty) {
@@ -241,9 +273,7 @@ class _TaskListPageState extends State<TaskListPage> {
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () => isAdmin
-                            ? _taskCubit.getAllTaskList()
-                            : _taskCubit.getTaskList(_selectedDate.yMd),
+                        onRefresh: () async => _loadTasks(),
                         child: TaskListView(
                           tasks: tasks,
                           onTap: (taskItem) {
@@ -257,35 +287,14 @@ class _TaskListPageState extends State<TaskListPage> {
                               ),
                             ).then((value) {
                               if (value == true) {
-                                // Eğer yönetici ise tüm görev listesini yenile, değilse seçili tarihin görevlerini getir
-                                if (isAdmin) {
-                                  _taskCubit.getAllTaskList();
-                                } else {
-                                  _taskCubit.getTaskList(_selectedDate.yMd);
-                                }
+                                _loadTasks();
                               }
                             });
                           },
                         ),
                       );
                     } else if (state is TaskFailure) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(state.message),
-                            AppSizes.gapH8,
-                            ElevatedButton(
-                              onPressed: () =>
-                                  _taskCubit.getTaskList(_selectedDate.dMy),
-                              child: Text(
-                                "Tekrar Dene",
-                                style: TextStyle(fontSize: 14.sp),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                      return _buildError(state.message);
                     }
                     return const SizedBox.shrink();
                   },
@@ -300,34 +309,33 @@ class _TaskListPageState extends State<TaskListPage> {
 }
 
 class UserSelectionBottomSheet extends StatefulWidget {
-  final List<String> users;
-  final List<String> selectedUsers;
+  final List<KisiModel> users;
+
+  /// Başlangıçta seçili gelen kullanıcı id’si (null ise hiç seçili yok)
+  final int? selectedUserId;
 
   const UserSelectionBottomSheet({
     Key? key,
     required this.users,
-    required this.selectedUsers,
+    this.selectedUserId,
   }) : super(key: key);
 
   @override
-  _UserSelectionBottomSheetState createState() => _UserSelectionBottomSheetState();
+  _UserSelectionBottomSheetState createState() =>
+      _UserSelectionBottomSheetState();
 }
 
 class _UserSelectionBottomSheetState extends State<UserSelectionBottomSheet> {
-  late List<String> _tempSelectedUsers;
+  late int? _tempSelectedId;
   late TextEditingController _searchController;
   String _searchText = '';
 
   @override
   void initState() {
     super.initState();
-    _tempSelectedUsers = List<String>.from(widget.selectedUsers);
-    _searchController = TextEditingController();
-    _searchController.addListener(() {
-      setState(() {
-        _searchText = _searchController.text;
-      });
-    });
+    _tempSelectedId = widget.selectedUserId;
+    _searchController = TextEditingController()
+      ..addListener(() => setState(() => _searchText = _searchController.text));
   }
 
   @override
@@ -338,11 +346,14 @@ class _UserSelectionBottomSheetState extends State<UserSelectionBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredUsers = widget.users
-        .where((u) => u.toLowerCase().contains(_searchText.toLowerCase()))
-        .toList();
+    final filtered = widget.users.where((u) {
+      final full = '${u.adi} ${u.soyadi}'.toLowerCase();
+      return full.contains(_searchText.toLowerCase());
+    }).toList();
+
     return SafeArea(
-      child: Padding(
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.8,
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
           top: 16,
@@ -352,84 +363,51 @@ class _UserSelectionBottomSheetState extends State<UserSelectionBottomSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 5,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            Text(
-              'Kullanıcı Seç',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
+            // Başlık, arama vs...
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Kullanıcı ara...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                prefixIcon: Icon(Icons.search),
+                // …
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: filteredUsers.length,
-                itemBuilder: (context, index) {
-                  final user = filteredUsers[index];
-                  final isSelected = _tempSelectedUsers.contains(user);
-                  return CheckboxListTile(
-                    title: Text(user),
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _tempSelectedUsers.add(user);
-                        } else {
-                          _tempSelectedUsers.remove(user);
-                        }
-                      });
-                    },
+                itemCount: filtered.length,
+                itemBuilder: (_, i) {
+                  final user = filtered[i];
+                  return RadioListTile<int>(
+                    title: Text('${user.adi} ${user.soyadi}'),
+                    value: user.id,
+                    groupValue: _tempSelectedId,
+                    onChanged: (val) => setState(() => _tempSelectedId = val),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: AppButton(
                     type: ButtonType.outlined,
-                    onClick: () {
-                      setState(() {
-                        _tempSelectedUsers.clear();
-                      });
-                    },
-                    title:'Temizle',
+                    title: 'Temizle',
+                    onClick: () => setState(() => _tempSelectedId = null),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: AppButton(
-                    onClick: () {
-                      Navigator.of(context).pop(_tempSelectedUsers);
-                    },
-                    title:'Uygula',
+                    title: 'Uygula',
+                    onClick: () => Navigator.of(context).pop(_tempSelectedId),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
           ],
         ),
       ),

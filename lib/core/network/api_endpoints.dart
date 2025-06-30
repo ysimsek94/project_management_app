@@ -18,12 +18,18 @@ class ApiEndpoints {
   static const addActivityImage = 'Faliyet/v1/faliyet-image/add';
   static String deleteActivityImage(int id) =>
       'Faliyet/v1/faliyet-image/delete/$id';
+  static const getActvityDurumAdet = 'Faliyet/v1/kullanici-gorev-durum-adet/getall';
 
 
   // Admin Dashboard Endpoints
-  static const String getProjeAdet = '/Home/GetProjeAdet';
-  static const String getProjeTutarPie = '/Home/GetProjeTutarPie';
-  static const String getFaaliyetTamamlandiBar = '/Home/GetFaaliyetTamamlandiBar';
-  static const String getFaaliyetProjeDonut = '/Home/GetFaaliyetProjeDonut';
-
+  static const String getAllProjeDurumAdet = 'Proje/v1/proje-durum-adet/getall';
+  static const String getAllProjeToplamTutar =
+      'Proje/v1/proje-toplam-tutar/getall';
+  static const String getFaaliyetTamamlandiBar =
+      '/Home/GetFaaliyetTamamlandiBar';
+  static String getFaaliyetProjeDonut(int departmanId) =>
+      'Proje/v1/proje-faliyet-adet/$departmanId';
+  //Kişi Endpoints
+  static const getAllKisiler = 'Kisi/v1/kullanici/getall';
+  static const getAllProje = 'Proje/v1/proje/getall';
 }

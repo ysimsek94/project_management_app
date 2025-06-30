@@ -18,8 +18,8 @@ class TaskMapPage extends StatelessWidget {
           return const AppCircularIndicator();
         } else if (state is MapLoaded) {
           // Görev konumlarını çek
-          final locations = state.tasks
-              .map((t) => t.projeFazGorev.geom?['coordinates'])
+          final locations = state.projects
+              .map((t) => t.proje.geom?['coordinates'])
               .where((coord) => coord != null && coord is List && coord.length >= 2)
               .map((coord) => LatLng(coord[1] as double, coord[0] as double))
               .toList();
@@ -46,7 +46,6 @@ class TaskMapPage extends StatelessWidget {
                 onPointsChanged: (_) {},
                 enableSearch: false,
                 autoInitLocation: false,
-                // TODO: Use circular marker icons if MapSelector supports customization, e.g. markerBuilder.
               ),
             ),
           );

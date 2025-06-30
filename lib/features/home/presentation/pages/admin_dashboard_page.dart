@@ -44,6 +44,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _touchedPieIndex = -1;
   int _touchedDonutIndex = -1;
 
+  // Use shared chart palette from AppColors
+  List<Color> get _pieColors => AppColors.chartPalette;
+  List<Color> get _donutBaseColors => AppColors.chartPalette;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AdminDashboardCubit, AdminDashboardState>(
@@ -74,7 +78,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  /// Durum kartlarını yatay liste olarak render eder
   Widget _buildStatusCards(List<ProjeAdetModel> items) {
+    if (items.isEmpty) {
+      return const Center(child: Text('Durum verisi bulunamadı'));
+    }
+    // Toplam adet hesaplamasını bir kez yap
+    final toplam = items.fold<int>(0, (sum, e) => sum + (e.adet ?? 0));
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.12,
       child: ListView.separated(
@@ -83,42 +93,48 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(width: 16),
         itemBuilder: (ctx, i) {
-          final it = items[i];
-          final toplam = items.fold<int>(0, (sum, e) => sum + (e.adet ?? 0));
-          final pct = toplam > 0 ? ((it.adet ?? 0) * 100.0 / toplam) : 0;
+          final item = items[i];
+          final adet = item.adet ?? 0;
+          final pct = toplam > 0 ? (adet * 100.0 / toplam) : 0;
           return SizedBox(
             width: MediaQuery.of(ctx).size.width * 0.45,
             child: Card(
               color: Theme.of(ctx).colorScheme.surface,
               elevation: 2,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding: const EdgeInsets.all(12),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      it.durumAdi,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                      item.durumAdi,
+                      style: Theme.of(ctx)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(ctx).colorScheme.onSurface,
+                          ),
                     ),
-                    const SizedBox(height: 8),
+                    const Spacer(),
                     Row(
                       children: [
                         Text(
-                          '${it.adet}',
+                          '$adet',
                           style: Theme.of(ctx).textTheme.titleLarge,
                         ),
                         const Spacer(),
                         Text(
                           '${pct.toStringAsFixed(1)}%',
-                          style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(ctx).colorScheme.primary),
+                          style: Theme.of(ctx)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(ctx).colorScheme.primary,
+                              ),
                         ),
                       ],
                     ),
@@ -132,12 +148,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  /// Pasta grafik oluşturur ve gösterir
   Widget _buildPieChart(String title, List<PieData> data) {
-    final colors = [
-      Theme.of(context).colorScheme.primary,
-      Theme.of(context).colorScheme.secondary,
-      AppColors.success,
-    ];
+    if (data.isEmpty) {
+      return _ChartContainer(
+        title: title,
+        child: Center(
+          child: Text(
+            'Gösterilecek proje tutar verisi yok',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      );
+    }
+    final colors = _pieColors;
+    final total = data.fold<double>(0, (sum, el) => sum + el.value);
 
     return _ChartContainer(
       title: title,
@@ -163,11 +188,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     final idx = e.key;
                     final d = e.value;
                     final isTouched = idx == _touchedPieIndex;
+                    final percent = total > 0 ? (d.value / total * 100) : 0;
                     return PieChartSectionData(
                       color: colors[idx % colors.length],
                       value: d.value,
-                      title: d.name,
+                      title: '${percent.toStringAsFixed(0)}%',
                       radius: isTouched ? 60 : 50,
+                      titlePositionPercentageOffset: 0.6,
                       titleStyle: Theme.of(context)
                           .textTheme
                           .bodySmall
@@ -189,7 +216,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: _LegendItem(
                     color: colors[idx % colors.length],
-                    text: '${d.name} (${d.value.toInt()})',
+                    text: '${d.name}',
                   ),
                 );
               }).toList(),
@@ -200,15 +227,26 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildDonutChart(String title, ProjectVsActivity donut) {
-    final segments = [
-      PieData(name: 'Proje', value: donut.proje.toDouble()),
-      PieData(name: 'Faaliyet', value: donut.faaliyet.toDouble()),
-    ];
-    final colors = [
-      Theme.of(context).colorScheme.primary,
-      AppColors.success,
-    ];
+  /// Halka grafik oluşturur ve gösterir
+  Widget _buildDonutChart(String title, List<PieData> data) {
+    if (data.isEmpty) {
+      return _ChartContainer(
+        title: title,
+        child: Center(
+          child: Text(
+            'Gösterilecek proje/faaliyet verisi yok',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      );
+    }
+    final baseColors = _donutBaseColors;
+    final segments = data;
+    final colors = List<Color>.generate(
+      segments.length,
+      (i) => baseColors[i % baseColors.length],
+    );
+    final total = segments.fold<double>(0, (sum, el) => sum + el.value);
 
     return _ChartContainer(
       title: title,
@@ -234,10 +272,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     final idx = e.key;
                     final d = e.value;
                     final isTouched = idx == _touchedDonutIndex;
+                    final percent = total > 0 ? (d.value / total * 100) : 0;
                     return PieChartSectionData(
                       color: colors[idx],
                       value: d.value,
-                      title: '${d.value.toInt()}%',
+                      title: '${percent.toStringAsFixed(0)}%',
                       radius: isTouched ? 60 : 50,
                       titleStyle:
                           Theme.of(context).textTheme.bodySmall?.copyWith(

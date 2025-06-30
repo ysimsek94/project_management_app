@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:project_management_app/core/constants/app_sizes.dart';
+import 'package:project_management_app/core/constants/app_colors.dart';
 
 class StatusItemData {
   final String label;
@@ -34,6 +35,42 @@ class _StatusProgressCardState extends State<StatusProgressCard> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.statusItems.isEmpty) {
+      return Card(
+        margin: EdgeInsets.symmetric(vertical: 8),
+        color: Colors.white,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+              AppSizes.gapH16,
+              const SizedBox(height: 32),
+              Center(
+                child: Text(
+                  'Gösterilecek kayıt bulunamadı.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      );
+    }
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8),
       color: Colors.white,
@@ -82,11 +119,12 @@ class _StatusProgressCardState extends State<StatusProgressCard> {
                             widget.statusItems.asMap().entries.map((entry) {
                           final index = entry.key;
                           final item = entry.value;
+                          final sectionColor = AppColors.chartPalette[index % AppColors.chartPalette.length];
                           final isTouched = index == touchedIndex;
                           final fontSize = isTouched ? 18.0 : 12.0;
                           final radius = isTouched ? 50.0 : 40.0;
                           return PieChartSectionData(
-                            color: item.color,
+                            color: sectionColor,
                             value: item.percent * 100,
                             title: '${(item.percent * 100).round()}%',
                             radius: radius,
@@ -116,7 +154,9 @@ class _StatusProgressCardState extends State<StatusProgressCard> {
                             width: 10,
                             height: 10,
                             decoration: BoxDecoration(
-                                color: item.color, shape: BoxShape.circle),
+                              color: AppColors.chartPalette[widget.statusItems.indexOf(item) % AppColors.chartPalette.length],
+                              shape: BoxShape.circle,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           Text(

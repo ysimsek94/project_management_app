@@ -5,6 +5,7 @@ import '../../data/datasources/admin_dashboard_remote_data_source.dart';
 import '../../data/models/proje_adet_model.dart';
 import '../../data/models/chart_dashboard_data.dart';
 import '../../data/models/faliyet_line.dart';
+import '../models/proje_request_model.dart';
 
 /// Concrete implementation of DashboardRepository using the remote data source.
 class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
@@ -13,13 +14,13 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
   AdminDashboardRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<List<ProjeAdetModel>> fetchProjectStatusCounts() {
-    return remoteDataSource.getProjeAdet();
+  Future<List<ProjeAdetModel>> fetchProjectStatusCounts(ProjeRequestModel request) {
+    return remoteDataSource.getProjeAdet(request);
   }
 
   @override
-  Future<ChartDashboardData> fetchProjectAmountChart() {
-    return remoteDataSource.getProjeTutarPie();
+  Future<ChartDashboardData> fetchProjectAmountChart(ProjeRequestModel request) {
+    return remoteDataSource.getProjeTutarPie(request);
   }
 
   @override
@@ -28,7 +29,7 @@ class AdminDashboardRepositoryImpl implements AdminDashboardRepository {
   }
 
   @override
-  Future<ProjectVsActivity> fetchProjectVsActivitySummary() {
+  Future<List<PieData>> fetchProjectVsActivitySummary() {
     return remoteDataSource.getFaaliyetProjeDonut();
   }
 }

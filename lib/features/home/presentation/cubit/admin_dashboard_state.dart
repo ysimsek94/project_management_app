@@ -35,7 +35,7 @@ class AdminDashboardLoaded extends AdminDashboardState {
   final List<FaliyetLine> activityByDept;
 
   /// Summary counts for project vs. activity donut chart
-  final ProjectVsActivity projectVsActivity;
+  final List<PieData> projectVsActivity;
 
   AdminDashboardLoaded({
     required this.projectStatusList,

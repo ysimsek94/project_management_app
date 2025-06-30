@@ -27,15 +27,3 @@ Map<String, dynamic> _$ChartDashboardDataToJson(ChartDashboardData instance) =>
     <String, dynamic>{
       'series': instance.series.map((e) => e.toJson()).toList(),
     };
-
-ProjectVsActivity _$ProjectVsActivityFromJson(Map<String, dynamic> json) =>
-    ProjectVsActivity(
-      proje: (json['proje'] as num?)?.toInt() ?? 0,
-      faaliyet: (json['faaliyet'] as num?)?.toInt() ?? 0,
-    );
-
-Map<String, dynamic> _$ProjectVsActivityToJson(ProjectVsActivity instance) =>
-    <String, dynamic>{
-      'proje': instance.proje,
-      'faaliyet': instance.faaliyet,
-    };

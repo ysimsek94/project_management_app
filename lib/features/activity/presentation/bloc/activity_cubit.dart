@@ -1,4 +1,3 @@
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:project_management_app/features/activity/data/models/faliyet_gorev_request_model.dart';
 
@@ -25,15 +24,9 @@ class ActivityCubit extends Cubit<ActivityState> {
     }
   }
 
-  Future<void> getActivityList(String date) async {
+  Future<void> getActivityList(FaliyetGorevRequestModel request) async {
     emit(ActivityLoadInProgress());
     try {
-      final request = FaliyetGorevRequestModel(
-          gorevId: 0,
-          kullaniciId: AppPreferences.kullaniciId ?? 0,
-          baslangicTarihi: "2025-01-01T00:00:00",
-          baslangicTarihi1: null, durum: GorevDurumEnum.none);
-
       var activities = await _activityUseCases.getActivityList(request);
       _allActivities = activities; // tam listeyi saklıyoruz
       emit(ActivityLoadSuccess(_allActivities)); // ekrana tam listeyi basıyoruz
@@ -42,13 +35,12 @@ class ActivityCubit extends Cubit<ActivityState> {
     }
   }
 
-
-
   void search(String query) {
     // Küçük/büyük harf duyarsız filtre
     final filtered = _allActivities
-        .where(
-            (t) => (t.faliyetGorev.gorev ?? '').toLowerCase().contains(query.toLowerCase()))
+        .where((t) => (t.faliyetGorev.gorev ?? '')
+            .toLowerCase()
+            .contains(query.toLowerCase()))
         .toList();
     emit(ActivityLoadSuccess(filtered));
   }

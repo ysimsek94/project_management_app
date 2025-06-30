@@ -1,3 +1,9 @@
+import 'dart:convert';
+
+import 'package:project_management_app/features/home/data/models/proje_request_model.dart';
+import 'package:project_management_app/features/home/data/models/proje_tamamlanma_line.dart';
+
+import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_service.dart';
 import '../../../../core/network/base_remote_data_source.dart';
 import '../models/proje_adet_model.dart';
@@ -11,49 +17,48 @@ class AdminDashboardRemoteDataSourceImpl extends BaseRemoteDataSource
   AdminDashboardRemoteDataSourceImpl(ApiService apiService) : super(apiService);
 
   @override
-  Future<List<ProjeAdetModel>> getProjeAdet() async {
-    /*
-    return getList<ProjeAdetModel>(
-      ApiEndpoints.getProjeAdet,
-      (json) => ProjeAdetModel.fromJson(json as Map<String, dynamic>),
+  Future<List<ProjeAdetModel>> getProjeAdet(ProjeRequestModel request) async {
+    print('JSON gönderiliyor: ${jsonEncode(request.toJson())}');
+
+    final result = await postList<ProjeAdetModel>(
+      ApiEndpoints.getAllProjeDurumAdet,
+      <String, dynamic>{},
+          (json) => ProjeAdetModel.fromJson(json),
       customMsgs: {
-        404: 'Proje adet bilgisi bulunamadı.',
-        400: 'Geçersiz proje adet sorgusu.',
-        500: 'Sunucu hatası, adet bilgisi alınamadı.',
+        404: 'Görev listesi bulunamadı.',
+        400: 'Hatalı görev sorgusu.',
+        500: 'Sunucu hatası. Görev listesi alınamadı.',
       },
     );
-    */
-    await Future.delayed(const Duration(milliseconds: 300));
-    final List<Map<String, dynamic>> mockJson = [
-      {"durumAdi": "Devam Ediyor", "adet": 12},
-      {"durumAdi": "Tamamlandı",   "adet": 15},
-      {"durumAdi": "İptal Edildi", "adet":  3},
-    ];
-    return mockJson.map((e) => ProjeAdetModel.fromJson(e)).toList();
+
+    print('Görev listesi döndü: ${result.length} kayıt');
+    return result;
   }
 
+
   @override
-  Future<ChartDashboardData> getProjeTutarPie() async {
-    /*
-    return getItem<ChartDashboardData>(
-      ApiEndpoints.getProjeTutarPie,
-      (json) => ChartDashboardData.fromJson(json as Map<String, dynamic>),
+  Future<ChartDashboardData> getProjeTutarPie(ProjeRequestModel request) async {
+    // Send the request and get raw JSON list from the service
+    final result = await postList<ProjeTamamlanmaLine>(
+      ApiEndpoints.getAllProjeToplamTutar,
+      <String, dynamic>{},
+          (json) => ProjeTamamlanmaLine.fromJson(json),
       customMsgs: {
-        404: 'Proje tutar bilgisi bulunamadı.',
-        400: 'Geçersiz tutar sorgusu.',
-        500: 'Sunucu hatası, tutar bilgisi alınamadı.',
+        404: 'Görev listesi bulunamadı.',
+        400: 'Hatalı görev sorgusu.',
+        500: 'Sunucu hatası. Görev listesi alınamadı.',
       },
     );
-    */
-    await Future.delayed(const Duration(milliseconds: 300));
-    final mockJson = {
-      "series": [
-        {"name": "IT", "value": 120000.0},
-        {"name": "HR", "value": 80000.0},
-        {"name": "Finance", "value": 150000.0},
-      ]
-    };
-    return ChartDashboardData.fromJson(mockJson);
+
+    // Map each ProjeTamamlanmaLine to PieData using its fields
+    final series = result.map<PieData>((item) {
+      return PieData(
+        name: item.departmanAdi,
+        value: item.toplamProjeTutari,
+      );
+    }).toList();
+
+    return ChartDashboardData(series: series);
   }
 
   @override
@@ -132,20 +137,19 @@ class AdminDashboardRemoteDataSourceImpl extends BaseRemoteDataSource
   }
 
   @override
-  Future<ProjectVsActivity> getFaaliyetProjeDonut() async {
-    /*
-    return getItem<ProjectVsActivity>(
-      ApiEndpoints.getFaaliyetProjeDonut,
-      (json) => ProjectVsActivity.fromJson(json as Map<String, dynamic>),
+  Future<List<PieData>> getFaaliyetProjeDonut() async {
+    final result= await getList<PieData>(
+      ApiEndpoints.getFaaliyetProjeDonut(-1),
+      (json) => PieData(
+        name: json['name'] as String,
+        value: (json['value'] as num).toDouble(),
+      ),
       customMsgs: {
-        404: 'Proje vs faaliyet özeti bulunamadı.',
-        400: 'Geçersiz özet sorgusu.',
-        500: 'Sunucu hatası, özet bilgisi alınamadı.',
+        404: 'Adet bilgisi bulunamadı.',
+        400: 'Geçersiz sorgu.',
+        500: 'Sunucu hatası, adet bilgisi alınamadı.',
       },
     );
-    */
-    await Future.delayed(const Duration(milliseconds: 300));
-    final mockJson = {"proje": 15, "faaliyet": 20};
-    return ProjectVsActivity.fromJson(mockJson);
+    return result;
   }
 }

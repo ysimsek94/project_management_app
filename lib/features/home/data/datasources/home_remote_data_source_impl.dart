@@ -25,17 +25,15 @@ class HomeRemoteDataSourceImpl extends BaseRemoteDataSource implements HomeRemot
   }
   @override
   Future<List<StatusSummaryModel>> fetchFaliyetStatusSummary() async {
-    // Mock veri oluşturmak için örnek liste
-    final List<StatusSummaryModel> mockStatusSummaries = [
-      StatusSummaryModel(name: 'DevamEdiyor', value: 42.0),
-      StatusSummaryModel(name: 'Tamamlandi', value: 13.0),
-      StatusSummaryModel(name: 'IptalEdildi', value: 8.0),
-      StatusSummaryModel(name: 'Atandı', value: 5.0),
-      StatusSummaryModel(name: 'Olusturuldu', value: 8.0),
-    ];
-
-    // Mock veri döndürülüyor
-    await Future.delayed(const Duration(milliseconds: 300)); // Yapay gecikme
-    return mockStatusSummaries;
+    var result=getList<StatusSummaryModel>(
+      ApiEndpoints.getActvityDurumAdet,
+          (json) => StatusSummaryModel.fromJson(json as Map<String, dynamic>),
+      customMsgs: {
+        404: 'Durum özetleri bulunamadı.',
+        400: 'Hatalı özet sorgusu.',
+        500: 'Sunucu hatası. Özetler alınamadı.',
+      },
+    );
+    return result;
   }
 }

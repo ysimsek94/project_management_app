@@ -19,6 +19,7 @@ import 'package:project_management_app/core/extensions/theme_extensions.dart';
 import 'package:project_management_app/core/widgets/app_bottom_nav_bar.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
 import '../../../task/presentation/bloc/task_state.dart';
+import '../../../task/presentation/pages/task_add_page.dart';
 import '../../../task/presentation/widgets/last_task_list.dart';
 import '../../presentation//widgets/completed_tasks_card.dart';
 import 'package:project_management_app/features/home/presentation/cubit/home_cubit.dart';
@@ -43,14 +44,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  bool get isAdmin => context.hasRole('admin');
-
-  /// Sayfa içeriği ve alt menülerin yönetimi
-  @override
-  Widget build(BuildContext context) {
-
-    // Alt sekme sayfalarını ve menü öğelerini birlikte oluştur (senkronizasyon için)
-    final List<Map<String, dynamic>> navConfig = [
+  /// Uygulamanın alt sekme konfigürasyonunu döndürür
+  List<Map<String, dynamic>> _getNavConfig() {
+    return [
       {
         'page': _buildHomeBody(),
         'item': const AppBottomNavBarItem(
@@ -61,9 +57,7 @@ class _HomePageState extends State<HomePage> {
       {
         'page': BlocProvider(
           create: (_) => TaskCubit(widget.taskUseCases),
-          child: TaskListPage(
-            taskUsecases: widget.taskUseCases,
-          ),
+          child: TaskListPage(taskUsecases: widget.taskUseCases),
         ),
         'item': const AppBottomNavBarItem(
           icon: Icons.list_alt_outlined,
@@ -73,26 +67,53 @@ class _HomePageState extends State<HomePage> {
       {
         'page': BlocProvider(
           create: (_) => ActivityCubit(widget.activityUseCases),
-          child: ActivityListPage(
-            activityUseCases: widget.activityUseCases,
-          ),
+          child: ActivityListPage(actvityUseCases:widget.activityUseCases),
         ),
         'item': const AppBottomNavBarItem(
           icon: Icons.event,
-          label: 'Faliyetler',
+          label: 'Faaliyetler',
         ),
       },
-      if (isAdmin) {
-        'page': BlocProvider(
-          create: (_) => getIt<MapCubit>()..loadTasks(),
-          child: const TaskMapPage(),
-        ),
-        'item': const AppBottomNavBarItem(
-          icon: Icons.map,
-          label: 'Harita',
-        ),
-      },
+      if (context.isAdmin)
+        {
+          'page': BlocProvider(
+            create: (_) => getIt<MapCubit>()..loadTasks(),
+            child: const TaskMapPage(),
+          ),
+          'item': const AppBottomNavBarItem(
+            icon: Icons.map,
+            label: 'Harita',
+          ),
+        },
     ];
+  }
+
+  /// Admin kullanıcı için ana sayfa görünümünü oluşturur
+  Widget _buildAdminHome() {
+    return BlocProvider(
+      create: (_) =>
+          AdminDashboardCubit(getIt<AdminDashboardDataUseCases>())..loadAll(),
+      child: Stack(
+        children: [
+          _buildGradientBackground(),
+          SafeArea(
+            child: Column(
+              children: [
+                AppSizes.gapH16,
+                _buildHeaderSection(),
+                AppSizes.gapH16,
+                const Expanded(child: AdminDashboardPage()),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final navConfig = _getNavConfig();
 
     final List<AppBottomNavBarItem> items = navConfig
         .map<AppBottomNavBarItem>((e) => e['item'] as AppBottomNavBarItem)
@@ -100,28 +121,10 @@ class _HomePageState extends State<HomePage> {
 
     List<Widget> pages =
         navConfig.map<Widget>((e) => e['page'] as Widget).toList();
-    if (isAdmin) {
-      pages[0] = BlocProvider(
-        create: (_) => AdminDashboardCubit(getIt<AdminDashboardDataUseCases>())..loadAll(),
-        child: Stack(
-          children: [
-            _buildGradientBackground(),
-            SafeArea(
-              child: Column(
-                children: [
-                  AppSizes.gapH16,
-                  _buildHeaderSection(),
-                  AppSizes.gapH16,
-                  const Expanded(child: AdminDashboardPage()),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+    if (context.isAdmin) {
+      pages[0] = _buildAdminHome();
     }
 
-    // In build():
     return Scaffold(
       body: pages[_currentIndex],
       bottomNavigationBar: _buildBottomNavBar(items),
@@ -324,7 +327,20 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 // LastTasksList using state.tasks
-                LastTasksList(tasks: state.tasks),
+                LastTasksList(
+                  tasks: state.tasks,
+                  onTap: (taskItem) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BlocProvider(
+                          create: (_) => TaskCubit(widget.taskUseCases),
+                          child: TaskAddPage(task: taskItem),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             );
           } else if (state is HomeError) {

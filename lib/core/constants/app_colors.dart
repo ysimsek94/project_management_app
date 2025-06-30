@@ -19,4 +19,13 @@ class AppColors {
   static const Color divider = Color(0xFFBDBDBD); // Bölücüler için
   static const Color shadow = Color(0x33000000); // Gölge efekti için
   static const Color focus = Color(0xFF80D8FF); // Odak rengi
+
+  // Common chart color palette
+  static const List<Color> chartPalette = [
+    Color(0xFF4CAF50), // green
+    Color(0xFF2196F3), // blue
+    Color(0xFFFFC107), // amber
+    Color(0xFF9C27B0), // purple
+    Color(0xFFF44336), // red
+  ];
 }

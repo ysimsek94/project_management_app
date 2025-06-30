@@ -28,7 +28,6 @@ class TaskRemoteDataSourceImpl extends BaseRemoteDataSource implements TaskRemot
         500: 'Sunucu hatası. Görev listesi alınamadı.',
       },
     );
-
     print('Görev listesi döndü: ${result.length} kayıt');
     return result;
   }

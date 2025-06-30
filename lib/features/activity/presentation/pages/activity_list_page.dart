@@ -6,10 +6,17 @@ import 'package:project_management_app/core/extensions/date_extensions.dart';
 import 'package:project_management_app/core/extensions/role_extensions.dart';
 
 import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/gorev_durum_enum.dart';
+import '../../../../core/page/base_page.dart';
+import '../../../../core/preferences/AppPreferences.dart';
 import '../../../../core/widgets/app_custom_app_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../activity/presentation/widgets/date_picker_section.dart';
+import '../../../kisi/data/models/kisi_model.dart';
+import '../../../kisi/presentation/cubit/kisi_cubit.dart';
+import '../../../kisi/presentation/cubit/kisi_state.dart';
+import '../../data/models/faliyet_gorev_request_model.dart';
 import '../../domain/usecases/activity_usecases.dart';
 import '../bloc/activity_cubit.dart';
 import '../bloc/activity_state.dart';
@@ -17,11 +24,11 @@ import '../widgets/activity_list_view.dart';
 import 'activity_add_page.dart';
 
 class ActivityListPage extends StatefulWidget {
-  final ActivityUseCases activityUseCases;
+  final ActivityUseCases actvityUseCases;
 
   const ActivityListPage({
     super.key,
-    required this.activityUseCases,
+    required this.actvityUseCases,
   });
 
   @override
@@ -29,48 +36,94 @@ class ActivityListPage extends StatefulWidget {
 }
 
 class _ActivityListPageState extends State<ActivityListPage> {
-  bool get isAdmin => context.hasRole('admin');
-
+  int? _selectedUserId;
   DateTime _selectedDate = DateTime.now();
-  List<String> _selectedUsers = [];
-  List<String> _users = ['Ali Yılmaz','Yusuf Şimşek','Bekir Yıldız','Emre Boz','Mehmet Yurdagul','Rıdvan Baş','Yusuf Sari','Burak Sar','Erman Tor']; // later fill from API
-  late ActivityCubit _activityCubit;
+  late ActivityCubit _activtyCubit;
   final TextEditingController _searchController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _activityCubit = ActivityCubit(widget.activityUseCases)
-      ..getActivityList(DateTime.now().yMd);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _activityCubit.close();
-    super.dispose();
-  }
+  // Seçilen tarihi günceller ve bu tarihe göre görevleri yeniden yükler
   void _updateSelectedDate(DateTime date) {
     setState(() {
       _selectedDate = date;
     });
-    if (isAdmin) {
-      _activityCubit.getActivityList(date.yMd);
-    } else {
-      _activityCubit.getActivityList(date.yMd);
-    }
+    _loadActivities();
   }
+
+  // Widget oluşturulduğunda cubit'i başlatır ve ilk görev listesini yükler
+  @override
+  void initState() {
+    super.initState();
+    _activtyCubit = ActivityCubit(widget.actvityUseCases);
+    _loadActivities();
+  }
+
+  // Görev listesini API'den çekmek için gerekli isteği başlatır
+  void _loadActivities() {
+    final req = _makeRequestModel();
+    _activtyCubit.getActivityList(req);
+  }
+
+  // Görev listesi için istek modelini oluşturur, admin ise alternatif kullanıcı id'si kullanabilir
+  FaliyetGorevRequestModel _makeRequestModel({int? overrideUserId}) {
+    // Kullanıcı id'sini adminlik durumuna göre belirle
+    final userId = context.isAdmin
+        ? (overrideUserId ?? (_selectedUserId ?? 0))
+        : (AppPreferences.kullaniciId ?? 0);
+    // TaskListRequestModel objesini oluştur ve döndür
+    return FaliyetGorevRequestModel(
+      gorevId: 0,
+      kullaniciId: userId,
+      durum: GorevDurumEnum.none,
+      baslangicTarihi: _selectedDate.yMd,
+      baslangicTarihi1: null,
+    );
+  }
+
+  // Yüklenme sürecini gösteren indikatör widget'ı
+  Widget _buildLoading() {
+    return const Center(child: CircularProgressIndicator());
+  }
+
+  // Hata durumunda gösterilecek mesaj ve tekrar dene butonunu içeren widget
+  Widget _buildError(String message) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(message),
+          AppSizes.gapH8,
+          ElevatedButton(
+            onPressed: () {
+              _loadActivities();
+            },
+            child: Text(
+              "Tekrar Dene",
+              style: TextStyle(fontSize: 14.sp),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Sayfa kapatılırken text controller ve cubit kaynaklarını temizler
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _activtyCubit.close();
+    super.dispose();
+  }
+
+  // Sayfanın ana görsel yapısını oluşturan build metodu
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: _activityCubit,
-      child: Scaffold(
-        appBar: const CustomAppBar(
-          title: "Faaliyet Listesi",
-          showBackButton: false,
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(8.0),
+      value: _activtyCubit,
+      child: BasePage(
+        title: "Görev Listesi",
+        showBackButton: false,
+        child: Padding(
+          padding: EdgeInsets.all(8.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -83,38 +136,50 @@ class _ActivityListPageState extends State<ActivityListPage> {
                     children: [
                       Text(
                         "${_selectedDate.monthName}, ${_selectedDate.day}",
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).colorScheme.onSurface,
+                        style: TextStyle(
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.bold,
+                          color:
+                          Theme.of(context).textTheme.titleLarge?.color ??
+                              Colors.black87,
                         ),
                       ),
-                      if (context.hasRole('admin'))
+                      if (context.isAdmin)
                         AppButton(
                           title: "Kullanıcı Seç",
                           icon: Icons.people,
                           onClick: () async {
-                            final result = await showModalBottomSheet<List<String>>(
+                            final result = await showModalBottomSheet<int?>(
                               context: context,
                               backgroundColor: Colors.white,
                               isScrollControlled: true,
                               shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16)),
                               ),
-                              builder: (_) => UserSelectionBottomSheet(
-                                users: _users,
-                                selectedUsers: _selectedUsers,
-                              ),
+                              builder: (_) {
+                                return BlocBuilder<KisiCubit, KisiState>(
+                                  builder: (context, state) {
+                                    if (state is KisiLoading) {
+                                      return const Center(
+                                          child: CircularProgressIndicator());
+                                    } else if (state is KisiLoaded) {
+                                      return UserSelectionBottomSheet(
+                                        users: state.kisiler,
+                                        selectedUserId: _selectedUserId,
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                );
+                              },
                             );
-                            if (result != null) {
-                              setState(() {
-                                _selectedUsers = result;
-                                if (_selectedUsers.isEmpty) {
-                                  _activityCubit.getActivityList(_selectedDate.yMd);
-                                } else {
-                                 // _activityCubit.getActivityListByUsers(_selectedDate.yMd, _selectedUsers);
-                                }
-                              });
-                            }
+                            // Eğer kullanıcı seçimi iptal edildiyse (result null) kullanıcıId'yi 0 olarak ata
+                            final userId = result ?? 0;
+                            setState(() {
+                              _selectedUserId = userId;
+                            });
+                            _activtyCubit.getActivityList(_makeRequestModel(overrideUserId: userId));
                           },
                           height: 35,
                           borderRadius: 10,
@@ -123,30 +188,25 @@ class _ActivityListPageState extends State<ActivityListPage> {
                     ],
                   ),
                   AppSizes.gapH12,
-                  DatePickerSection(
-                    currentDate: _selectedDate,
-                    onDateSelected: (date) {
-                      setState(() {
-                        _selectedDate = date;
-                        _activityCubit.getActivityList(date.yMd);
-                      }
-                      );
-                    },
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      DatePickerSection(
+                        currentDate: _selectedDate,
+                        onDateSelected: (date) {
+                          _updateSelectedDate(date);
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  AppSizes.gapH16,
                   Row(
                     children: [
                       Icon(Icons.calendar_today,
-                          color: Theme.of(context).primaryColor, size: 18),
-                      AppSizes.gapH8,
-                      const Text("Tüm Faaliyetler - ",
-                          style: TextStyle(fontSize: 14)),
-                      Text(
-                        _selectedDate.dMy,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: Theme.of(context).primaryColor),
-                      ),
+                          color: Theme.of(context).primaryColor, size: 18.sp),
+                      SizedBox(width: 8.w),
+                      Text("Tüm Görevler - ",
+                          style: TextStyle(fontSize: 14.sp)),
                       GestureDetector(
                         onTap: () async {
                           final pickedDate = await showDatePicker(
@@ -175,19 +235,19 @@ class _ActivityListPageState extends State<ActivityListPage> {
                     builder: (context, child) {
                       final hasText = _searchController.text.isNotEmpty;
                       return AppTextField(
-                        hint: 'Faaliyet ara...',
+                        hint: 'Görev ara...',
                         prefixIcon: Icons.search,
                         suffixIcon: hasText ? Icons.clear : null,
                         borderRadius: 12,
                         textEditingController: _searchController,
                         onChange: (value) {
-                          _activityCubit.search(value);
+                          _activtyCubit.search(value);
                         },
                         onSuffixIconTap: hasText
                             ? () {
-                                _searchController.clear();
-                                _activityCubit.search('');
-                              }
+                          _searchController.clear();
+                          _activtyCubit.search('');
+                        }
                             : null,
                       );
                     },
@@ -200,21 +260,21 @@ class _ActivityListPageState extends State<ActivityListPage> {
                 child: BlocBuilder<ActivityCubit, ActivityState>(
                   builder: (context, state) {
                     if (state is ActivityLoadInProgress) {
-                      return const Center(child: CircularProgressIndicator());
+                      return _buildLoading();
                     } else if (state is ActivityLoadSuccess) {
                       final activities = state.activities;
                       if (activities.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Text(
-                            "Faaliyet bulunamadı",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            "Görev bulunamadı",
+                            style:
+                            TextStyle(fontSize: 16.sp, color: Colors.grey),
                           ),
                         );
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () =>
-                            _activityCubit.getActivityList(_selectedDate.yMd),
+                        onRefresh: () async => _loadActivities(),
                         child: ActivityListView(
                           activities: activities,
                           onTap: (activityItem) {
@@ -222,33 +282,20 @@ class _ActivityListPageState extends State<ActivityListPage> {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => BlocProvider.value(
-                                  value: _activityCubit,
+                                  value: _activtyCubit,
                                   child: ActivityAddPage(activity: activityItem),
                                 ),
                               ),
                             ).then((value) {
                               if (value == true) {
-                                _activityCubit.getActivityList(_selectedDate.yMd);
+                                _loadActivities();
                               }
                             });
                           },
                         ),
                       );
                     } else if (state is ActivityFailure) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(state.message),
-                            AppSizes.gapH8,
-                            ElevatedButton(
-                              onPressed: () =>
-                                  _activityCubit.getActivityList(_selectedDate.dMy),
-                              child: const Text("Tekrar Dene"),
-                            ),
-                          ],
-                        ),
-                      );
+                      return _buildError(state.message);
                     }
                     return const SizedBox.shrink();
                   },
@@ -263,34 +310,33 @@ class _ActivityListPageState extends State<ActivityListPage> {
 }
 
 class UserSelectionBottomSheet extends StatefulWidget {
-  final List<String> users;
-  final List<String> selectedUsers;
+  final List<KisiModel> users;
+
+  /// Başlangıçta seçili gelen kullanıcı id’si (null ise hiç seçili yok)
+  final int? selectedUserId;
 
   const UserSelectionBottomSheet({
     Key? key,
     required this.users,
-    required this.selectedUsers,
+    this.selectedUserId,
   }) : super(key: key);
 
   @override
-  _UserSelectionBottomSheetState createState() => _UserSelectionBottomSheetState();
+  _UserSelectionBottomSheetState createState() =>
+      _UserSelectionBottomSheetState();
 }
 
 class _UserSelectionBottomSheetState extends State<UserSelectionBottomSheet> {
-  late List<String> _tempSelectedUsers;
+  late int? _tempSelectedId;
   late TextEditingController _searchController;
   String _searchText = '';
 
   @override
   void initState() {
     super.initState();
-    _tempSelectedUsers = List<String>.from(widget.selectedUsers);
-    _searchController = TextEditingController();
-    _searchController.addListener(() {
-      setState(() {
-        _searchText = _searchController.text;
-      });
-    });
+    _tempSelectedId = widget.selectedUserId;
+    _searchController = TextEditingController()
+      ..addListener(() => setState(() => _searchText = _searchController.text));
   }
 
   @override
@@ -301,11 +347,14 @@ class _UserSelectionBottomSheetState extends State<UserSelectionBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredUsers = widget.users
-        .where((u) => u.toLowerCase().contains(_searchText.toLowerCase()))
-        .toList();
+    final filtered = widget.users.where((u) {
+      final full = '${u.adi} ${u.soyadi}'.toLowerCase();
+      return full.contains(_searchText.toLowerCase());
+    }).toList();
+
     return SafeArea(
-      child: Padding(
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.8,
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
           top: 16,
@@ -315,87 +364,55 @@ class _UserSelectionBottomSheetState extends State<UserSelectionBottomSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 5,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            Text(
-              'Kullanıcı Seç',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
+            // Başlık, arama vs...
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Kullanıcı ara...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                prefixIcon: Icon(Icons.search),
+                // …
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: filteredUsers.length,
-                itemBuilder: (context, index) {
-                  final user = filteredUsers[index];
-                  final isSelected = _tempSelectedUsers.contains(user);
-                  return CheckboxListTile(
-                    title: Text(user),
-                    value: isSelected,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _tempSelectedUsers.add(user);
-                        } else {
-                          _tempSelectedUsers.remove(user);
-                        }
-                      });
-                    },
+                itemCount: filtered.length,
+                itemBuilder: (_, i) {
+                  final user = filtered[i];
+                  return RadioListTile<int>(
+                    title: Text('${user.adi} ${user.soyadi}'),
+                    value: user.id,
+                    groupValue: _tempSelectedId,
+                    onChanged: (val) => setState(() => _tempSelectedId = val),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: AppButton(
                     type: ButtonType.outlined,
-                    onClick: () {
-                      setState(() {
-                        _tempSelectedUsers.clear();
-                      });
-                    },
-                    title:'Temizle',
+                    title: 'Temizle',
+                    onClick: () => setState(() => _tempSelectedId = null),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: AppButton(
-                    onClick: () {
-                      Navigator.of(context).pop(_tempSelectedUsers);
-                    },
-                    title:'Uygula',
+                    title: 'Uygula',
+                    onClick: () => Navigator.of(context).pop(_tempSelectedId),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
 }
+
